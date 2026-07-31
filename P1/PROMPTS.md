@@ -696,15 +696,10 @@ constructor(
 ![Resumen de la creación del README.md](Docs/image-18.png)
 *Figura 7.2: Confirmación de la generación del nuevo `README.md` estructurado en 20 secciones que cubren instalación, Docker, arquitectura y principios SOLID.*
 
-![Prompt origen para la creación de PROMPTS.md](Docs/image-19.png)
-*Figura 7.3: Prompt original enviado a Claude para estructurar y redactar este documento (`PROMPTS.md`) registrando el uso responsable de IA.*
 
 ### Resultado
 
 Documentación alineada con el estado final y real del código, no con una versión intermedia del proyecto.
 
----
 
-## Nota final
-
-En ningún momento de este proyecto se aceptó una respuesta de la IA sin ejecutar al menos una verificación objetiva (`tsc --noEmit`, `eslint`, `nest build`, o la ejecución real de las pruebas unitarias). Cuando esas verificaciones automáticas no alcanzaban —como detectar que una regla de validación no cubría el límite real de una columna, o que un puerto de Docker quedaba expuesto de más— se dependió de una revisión manual dedicada (Prompt 6), que sí encontró errores reales. Ese es, en definitiva, el propósito de este documento: dejar constancia de que la IA propuso y escribió código, pero que cada parte fue leída, cuestionada y, cuando hizo falta, corregida antes de darla por buena.
+En ningún momento se aceptó una respuesta de la IA sin ejecutar al menos una verificación objetiva (`tsc --noEmit`, `eslint`, `nest build`, o la ejecución real de las pruebas unitarias). Cuando esas verificaciones automáticas no alcanzaban —como detectar que una regla de validación no cubría el límite real de una columna, o que un puerto de Docker quedaba expuesto de más— se dependió de una revisión manual dedicada (Prompt 6), que sí encontró errores reales. Ese es, en definitiva, el propósito de este documento: dejar constancia de que la IA propuso y escribió código, pero que cada parte fue leída, cuestionada y, cuando hizo falta, corregida antes de darla por buena.
