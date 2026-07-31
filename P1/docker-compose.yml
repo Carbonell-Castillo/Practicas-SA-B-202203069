@@ -8,13 +8,40 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - '${POSTGRES_PORT:-5432}:5432'
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
     volumes:
       - solicitudes_postgres_data:/var/lib/postgresql/data
     networks:
       - solicitudes-network
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Instancia separada para pruebas e2e: puerto, volumen y credenciales propios,
+  # para que un `deleteMany()` de limpieza jamás pueda alcanzar la base de desarrollo.
+  postgres-test:
+    container_name: solicitudes-postgres-test
+    image: postgres:16.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_TEST_USER:-solicitudes_test_user}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD:-changeme_test_password}
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-solicitudes_test_db}
+    ports:
+      - '127.0.0.1:${POSTGRES_TEST_PORT:-5433}:5432'
+    volumes:
+      - solicitudes_postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - solicitudes-network
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_TEST_USER:-solicitudes_test_user} -d ${POSTGRES_TEST_DB:-solicitudes_test_db}',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,3 +54,5 @@ networks:
 volumes:
   solicitudes_postgres_data:
     name: solicitudes_postgres_data
+  solicitudes_postgres_test_data:
+    name: solicitudes_postgres_test_data

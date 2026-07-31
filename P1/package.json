@@ -14,10 +14,20 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
+    "test:unit": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "pretest:e2e": "prisma migrate deploy --config prisma.test.config.ts",
+    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand",
+    "test:e2e:cov": "jest --config ./test/jest-e2e.json --runInBand --coverage",
+    "test:e2e:db:up": "docker compose up -d postgres-test",
+    "test:e2e:db:down": "docker compose stop postgres-test",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed",
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
