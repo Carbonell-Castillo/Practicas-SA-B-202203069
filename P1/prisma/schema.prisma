@@ -9,3 +9,37 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+/// Estado del ciclo de vida de una solicitud operativa.
+enum EstadoSolicitud {
+  REGISTRADA
+  EN_PROCESO
+  FINALIZADA
+
+  @@map("estado_solicitud")
+}
+
+/// Solicitud operativa registrada por un área de la organización.
+model SolicitudOperativa {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  titulo          String @db.VarChar(150)
+  areaSolicitante String @map("area_solicitante") @db.VarChar(100)
+
+  /// Rango permitido 1-5. Prisma no soporta CHECK declarativo en el schema;
+  /// la restricción se agrega a mano en la migración SQL (ver prisma/migrations).
+  prioridad Int
+
+  /// Dinero: siempre Decimal(12,2), nunca Float. CHECK >= 0 agregado en la migración SQL.
+  costoEstimado Decimal @map("costo_estimado") @db.Decimal(12, 2)
+
+  estado EstadoSolicitud @default(REGISTRADA)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([estado])
+  @@index([prioridad])
+  @@index([createdAt])
+  @@map("solicitudes_operativas")
+}
