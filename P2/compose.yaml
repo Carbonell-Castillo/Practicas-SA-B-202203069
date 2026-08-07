@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: p2-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: p2_user
+      POSTGRES_PASSWORD: p2_password
+      POSTGRES_DB: p2_auth_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U p2_user -d p2_auth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: p2-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  authorization-service:
+    build:
+      context: ./authorization-service
+    container_name: p2-authorization-service
+    restart: unless-stopped
+    environment:
+      PORT: 4001
+    ports:
+      - "4001:4001"
+
+  backend:
+    build:
+      context: ./backend
+    container_name: p2-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      # Sobrescriben lo que traiga backend/.env: dentro de la red de Docker
+      # los otros servicios se resuelven por nombre, no por localhost.
+      DATABASE_URL: postgresql://p2_user:p2_password@postgres:5432/p2_auth_db?schema=public
+      AUTHORIZATION_SERVICE_URL: http://authorization-service:4001/api
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      authorization-service:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Esta URL la usa el NAVEGADOR del usuario, por eso apunta al puerto
+        # publicado en el host (localhost), no al nombre interno "backend".
+        NEXT_PUBLIC_API_URL: http://localhost:4000/api
+    container_name: p2-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  pgadmin_data:
