@@ -37,22 +37,23 @@ Inicia sesión con las [credenciales de prueba](#credenciales-de-prueba) que ya 
 
 Tres procesos Node/TypeScript independientes, cada uno con una única responsabilidad:
 
-```
-┌─────────────┐        REST (cookies httpOnly)        ┌──────────────────┐
-│  frontend    │ ─────────────────────────────────────▶│     backend       │
-│  Next.js     │◀───────────────────────────────────── │     NestJS         │
-│  :3000       │        JSON + Set-Cookie                │     :4000          │
-└─────────────┘                                          └─────────┬─────────┘
-                                                                     │
-                                                    ┌────────────────┼────────────────┐
-                                                    │                                 │
-                                                    ▼                                 ▼
-                                          ┌───────────────────┐            ┌──────────────────────┐
-                                          │     PostgreSQL      │            │  authorization-service │
-                                          │     :5432            │            │  NestJS · :4001          │
-                                          └───────────────────┘            │  POST /validate           │
-                                                                            │  { role, route } → allowed │
-                                                                            └──────────────────────┘
+```mermaid
+graph LR
+    F["frontend\n(Next.js · :3000)"] -- "REST API (cookies httpOnly)" --> B["backend\n(NestJS · :4000)"]
+    B -- "JSON + Set-Cookie" --> F
+    
+    B --> DB[("PostgreSQL\n(:5432)")]
+    B -- "POST /validate\n{role, route} -> allowed" --> A["authorization-service\n(NestJS · :4001)"]
+    
+    classDef frontend fill:#000,stroke:#333,stroke-width:2px,color:#fff
+    classDef backend fill:#ea2845,stroke:#333,stroke-width:2px,color:#fff
+    classDef db fill:#336791,stroke:#333,stroke-width:2px,color:#fff
+    classDef auth fill:#e23337,stroke:#333,stroke-width:2px,color:#fff
+    
+    class F frontend
+    class B backend
+    class DB db
+    class A auth
 ```
 
 - **`frontend/`** — Next.js (App Router). No conoce reglas de permisos ni toca el token: solo hace `fetch`/`axios` con `withCredentials: true` y reacciona a 401/403.
