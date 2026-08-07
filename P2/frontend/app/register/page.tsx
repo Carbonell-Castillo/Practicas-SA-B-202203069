@@ -3,29 +3,29 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import api from '../lib/axios';
-import { BrandPanel } from './components/brand-panel';
-import { PasswordField } from './components/password-field';
-import { Spinner } from './components/spinner';
+import api from '../../lib/axios';
+import { BrandPanel } from '../components/brand-panel';
+import { PasswordField } from '../components/password-field';
+import { Spinner } from '../components/spinner';
 
-export default function LoginPage() {
+export default function RegisterPage() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/login', { email, password });
-      const role = response.data.user.role;
-      router.push(role === 'ADMIN' ? '/admin' : '/dashboard');
+      await api.post('/auth/register', { name, email, password });
+      router.push('/?registered=1');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'No se pudo iniciar sesión. Verifica tus datos.');
+      setError(err.response?.data?.message || 'No se pudo completar el registro.');
       setLoading(false);
     }
   };
@@ -33,22 +33,36 @@ export default function LoginPage() {
   return (
     <div className="auth-shell">
       <BrandPanel
-        eyebrow="Bienvenido de nuevo"
-        title="Entra a tu cuenta"
-        description="Cada sesión queda protegida por un token que vive únicamente en una cookie HttpOnly, invisible para cualquier script del navegador."
+        eyebrow="Únete"
+        title="Crea tu cuenta"
+        description="Tu nombre y correo se cifran con AES-256 antes de guardarse; nunca se almacenan en texto plano en la base de datos."
       />
 
       <div className="auth-form-wrap">
         <div className="auth-card">
           <h1 className="text-2xl font-semibold tracking-tight text-[var(--text)]">
-            Iniciar sesión
+            Crear cuenta
           </h1>
           <p className="mt-1.5 text-sm text-[var(--text-muted)]">
-            Ingresa tus credenciales para continuar.
+            Se registrará con permisos de Cliente.
           </p>
 
-          <form onSubmit={handleLogin} className="mt-7 space-y-4">
+          <form onSubmit={handleRegister} className="mt-7 space-y-4">
             {error && <div className="alert-error">{error}</div>}
+
+            <div>
+              <label htmlFor="name" className="field-label">Nombre completo</label>
+              <input
+                id="name"
+                type="text"
+                required
+                autoComplete="name"
+                className="field-input"
+                placeholder="Juan Pérez"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
 
             <div>
               <label htmlFor="email" className="field-label">Correo electrónico</label>
@@ -69,19 +83,21 @@ export default function LoginPage() {
               label="Contraseña"
               value={password}
               onChange={setPassword}
-              autoComplete="current-password"
+              autoComplete="new-password"
+              minLength={6}
+              hint="Mínimo 6 caracteres."
             />
 
             <button type="submit" disabled={loading} className="btn-primary">
               {loading && <Spinner />}
-              {loading ? 'Verificando…' : 'Iniciar sesión'}
+              {loading ? 'Creando cuenta…' : 'Crear cuenta'}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-[var(--text-muted)]">
-            ¿No tienes una cuenta?{' '}
-            <Link href="/register" className="link-accent">
-              Regístrate
+            ¿Ya tienes una cuenta?{' '}
+            <Link href="/" className="link-accent">
+              Inicia sesión
             </Link>
           </p>
         </div>
