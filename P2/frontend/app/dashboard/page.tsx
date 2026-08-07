@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/axios';
-import { Spinner } from '../components/spinner';
+import { LayoutDashboard, LogOut, ArrowRight, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 export default function DashboardPage() {
   const [message, setMessage] = useState('');
@@ -31,48 +31,56 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--bg)] text-[var(--text-muted)]">
-        <Spinner />
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
+        <div className="h-6 w-6 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--bg)] p-4">
-      <div className="w-full max-w-lg space-y-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-9">
-        <div>
-          <span className="text-xs font-medium uppercase tracking-widest text-[var(--accent)]">
-            Sesión confirmada
-          </span>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text)]">
-            Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">Ruta 2 · Admin y Cliente</p>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 p-4">
+      <div className="w-full max-w-[500px] space-y-6 rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
+        <div className="flex items-start gap-4">
+          <div className="h-12 w-12 shrink-0 bg-zinc-900 text-white rounded-xl flex items-center justify-center shadow-sm">
+            <LayoutDashboard size={24} strokeWidth={1.5} />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-zinc-900">
+              Panel Principal
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500">Ruta 2 · Acceso Cliente y Admin</p>
+          </div>
         </div>
 
         {error ? (
-          <div className="alert-error">{error}</div>
+          <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 text-red-600 text-sm">
+            <ShieldAlert size={18} className="mt-0.5 shrink-0" />
+            <p>{error}</p>
+          </div>
         ) : (
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] px-4 py-3 text-sm text-[var(--text)]">
-            {message}
+          <div className="p-4 rounded-xl border border-zinc-200 bg-zinc-50 flex items-start gap-3 text-zinc-700 text-sm">
+            <CheckCircle2 size={18} className="text-green-600 mt-0.5 shrink-0" />
+            <p>{message}</p>
           </div>
         )}
 
-        <div className="flex gap-3 pt-1">
+        <div className="flex gap-3 pt-2">
           <button
             onClick={() => router.push('/admin')}
-            className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] px-4 py-2.5 text-sm font-medium text-[var(--text)] transition-colors hover:border-[var(--accent)]/50"
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
           >
-            Ir a Admin (Ruta 1)
+            <span>Ir a Admin</span>
+            <ArrowRight size={16} />
           </button>
           <button
             onClick={async () => {
               await api.post('/auth/logout');
               router.push('/');
             }}
-            className="flex-1 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-2.5 text-sm font-medium text-[#ffb3b6] transition-colors hover:brightness-110"
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
           >
-            Cerrar sesión
+            <LogOut size={16} />
+            <span>Cerrar sesión</span>
           </button>
         </div>
       </div>
