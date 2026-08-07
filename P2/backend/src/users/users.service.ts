@@ -20,7 +20,7 @@ export class UsersService {
     });
     
     if (existingUser) {
-      throw new ConflictException('Email already in use');
+      throw new ConflictException('El correo ya está registrado');
     }
 
     const nameEncrypted = this.cryptoService.encrypt(createUserDto.name);
