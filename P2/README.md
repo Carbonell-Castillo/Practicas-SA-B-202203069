@@ -33,6 +33,22 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))" # ->
 
 Inicia sesión con las [credenciales de prueba](#credenciales-de-prueba) que ya vienen creadas, o regístrate desde `/register` (siempre crea un usuario `CLIENT`). Para bajar todo: `docker compose down` (agrega `-v` para además borrar los datos de Postgres). Si prefieres correr el código sin contenedores, o quieres el detalle variable por variable, sigue en [Puesta en marcha](#puesta-en-marcha).
 
+## Tecnologías
+
+| Categoría | Tecnología | Uso en el proyecto |
+|---|---|---|
+| Frontend | [Next.js 16](https://nextjs.org/) (App Router) + React 19 + TypeScript | Páginas de login, registro, dashboard y panel admin |
+| Estilos | Tailwind CSS 4 | UI del frontend |
+| Backend | [NestJS 11](https://nestjs.com/) + TypeScript | API principal (`backend/`) y microservicio de autorización (`authorization-service/`) |
+| Base de datos | PostgreSQL 16 + [Prisma ORM 7](https://www.prisma.io/) | Persistencia de usuarios (solo desde `backend/`) |
+| Autenticación | JWT (`@nestjs/jwt`, `passport-jwt`) | Firma y verificación de sesión, con renovación automática por ventana de gracia |
+| Transporte de sesión | Cookies `HttpOnly` (`cookie-parser`) | El JWT nunca es accesible desde JavaScript en el navegador |
+| Cifrado | AES-256-CBC (Node `crypto`) | Cifrado de `name`/`email` en reposo, más HMAC-SHA256 para el índice de búsqueda por email |
+| Hash de contraseñas | [Argon2](https://github.com/ranisalt/node-argon2) | Hash irreversible de contraseñas (no usa AES, ya que nunca deben desencriptarse) |
+| Comunicación interna | Axios + `@nestjs/axios` con retry/backoff | `backend` → `authorization-service` vía HTTP |
+| Contenedores | Docker + Docker Compose | Orquesta los 5 servicios (`postgres`, `pgadmin`, `authorization-service`, `backend`, `frontend`) |
+| Documentación de API | Swagger (`@nestjs/swagger`) | Especificación de los endpoints del backend |
+
 ## Arquitectura
 
 Tres procesos Node/TypeScript independientes, cada uno con una única responsabilidad:
@@ -60,6 +76,61 @@ graph LR
 - **`backend/`** — NestJS. Dueño de la autenticación (usuarios, contraseñas, JWT, cifrado) y del enrutamiento HTTP. **No decide** si un rol puede entrar a una ruta — eso lo delega al microservicio.
 - **`authorization-service/`** — NestJS, proceso separado, sin base de datos ni acceso a contraseñas. Solo conoce la regla `{ role, route } → allowed: boolean`.
 - **`postgres`** — única fuente de datos persistente, contiene exclusivamente al `backend`.
+
+### Diagrama de secuencia — Login, renovación de JWT y autorización por rol
+
+```mermaid
+sequenceDiagram
+    actor U as Usuario
+    participant F as Frontend (Next.js)
+    participant B as Backend (NestJS)
+    participant DB as PostgreSQL
+    participant A as Authorization Service
+
+    U->>F: Ingresa credenciales
+    F->>B: POST /api/auth/login
+    B->>DB: Busca usuario por emailHash (HMAC)
+    DB-->>B: Usuario (name/email cifrados AES, passwordHash Argon2)
+    B->>B: verifyPassword() con Argon2
+    B->>B: Firma JWT (sub, role, exp)
+    B-->>F: 200 + Set-Cookie (JWT, HttpOnly, Secure, SameSite)
+    F-->>U: Redirige a /dashboard o /admin
+
+    Note over U,B: Peticiones posteriores a rutas protegidas
+
+    U->>F: Navega a ruta protegida (ej. /admin)
+    F->>B: GET /api/protected/ruta1 (cookie httpOnly enviada automáticamente)
+    B->>B: JwtStrategy valida firma y exp
+
+    alt Token vigente
+        B->>B: needsTokenRenewal = false
+    else Token vencido dentro de la ventana de gracia
+        B->>B: needsTokenRenewal = true
+    else Token vencido fuera de la ventana de gracia
+        B-->>F: 401 Unauthorized
+        F-->>U: Redirige a login
+    end
+
+    B->>A: POST /validate { role, route }
+    alt Authorization Service responde
+        A-->>B: { allowed: true/false }
+    else Sin respuesta (timeout)
+        loop reintentos con backoff exponencial
+            B->>A: POST /validate (retry)
+        end
+        A-->>B: { allowed } o se agotan los reintentos
+        Note over B: Si se agotan los reintentos, se deniega (503) por default
+    end
+
+    alt allowed = true
+        B->>B: Si needsTokenRenewal, firma un nuevo JWT
+        B-->>F: 200 + (opcional) Set-Cookie con JWT renovado
+        F-->>U: Muestra contenido protegido
+    else allowed = false
+        B-->>F: 403 Forbidden
+        F-->>U: Acceso denegado
+    end
+```
 
 ## Cumplimiento de requisitos
 
