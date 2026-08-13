@@ -1,68 +1,64 @@
 ## 202203069
 ## Bruce Carbonell Castillo Cifuentes 
 
-# 1. Arquitectura propuesta
+## 1. Arquitectura propuesta
 
-Para este sistema propondría **4 microservicios principales**, reutilizando además el servicio de autenticación de la Práctica 2:
+La arquitectura se divide en **4 microservicios principales** y reutiliza el servicio de autenticación desarrollado en la Práctica 2. Esta división obedece a los principios de alta cohesión y bajo acoplamiento, permitiendo escalar de forma independiente las partes del sistema que más lo requieran (por ejemplo, el procesamiento de transacciones masivas). 
 
-| Componente                            | Responsabilidad                                           |
+| Componente                            | Responsabilidad principal y alcance                       |
 | ------------------------------------- | --------------------------------------------------------- |
-| Servicio de Autenticación             | Login, OAuth/JWT, usuarios, roles y permisos              |
-| Microservicio de Transacciones        | Carga CSV, lotes, transacciones, validaciones e historial |
-| Microservicio de Aprobaciones         | Flujo Maker → Checker → Authorizer                        |
-| Microservicio de Integración Bancaria | Comunicación con el Core Bancario externo                 |
-| Microservicio de Notificaciones       | Envío de correos a clientes/beneficiarios                 |
-| API Gateway                           | Punto de entrada, validación JWT, rutas, autorización     |
-| FTP / Object Storage                  | Almacenamiento de CSV                                     |
-| Logging centralizado                  | Auditoría y registro de todos los servicios               |
+| Servicio de Autenticación             | Gestión de la identidad de los usuarios, login, generación y validación de tokens OAuth/JWT, así como administración de roles y permisos del sistema. |
+| Microservicio de Transacciones        | Orquestación de la carga de archivos CSV, creación de lotes (batches), desglose de transacciones individuales, validaciones de formato/negocio e historial de estados. |
+| Microservicio de Aprobaciones         | Gestión del flujo de autorización de pagos (Maker → Checker → Authorizer). Controla de forma estricta qué roles pueden aprobar o rechazar cada lote en su etapa correspondiente. |
+| Microservicio de Integración Bancaria | Actúa como capa anticorrupción (Anti-Corruption Layer) para la comunicación con el Core Bancario externo, aislando las fallas y gestionando reintentos. |
+| Microservicio de Notificaciones       | Encargado del envío de correos electrónicos a clientes o beneficiarios, y cualquier otra comunicación saliente de la plataforma. |
+| API Gateway                           | Único punto de entrada público de la aplicación. Centraliza el enrutamiento, validación inicial del JWT, políticas de seguridad (CORS, Rate Limiting) y autorización de rutas. |
+| FTP / Object Storage                  | Medio de almacenamiento persistente para los archivos CSV originales, evitando sobrecargar la base de datos relacional. |
+| Logging centralizado                  | Plataforma unificada de auditoría y registro de eventos transaccionales y técnicos de todos los microservicios, clave para la trazabilidad y monitoreo. |
 
-El flujo general quedaría:
+El flujo general del sistema inicia cuando el usuario se autentica y posteriormente interactúa con el API Gateway, el cual dirige el tráfico al microservicio adecuado según el proceso. El flujo de interacciones es el siguiente:el siguiente:
 
-```text
-Usuario
-   ↓
-OAuth / Auth
-   ↓ JWT
-API Gateway
-   ↓
-Transacciones
-   ↓
-Validación CSV
-   ↓
-Aprobaciones
-   ↓
-Maker → Checker → Authorizer
-   ↓
-Integración Bancaria
-   ↓
-Core Bancario
-   ↓
-Notificaciones
+```mermaid
+flowchart TD
+    U([Usuario]) -->|Credenciales| AUTH[OAuth / Servicio de autenticación]
+    AUTH -->|JWT| GW[API Gateway]
+    GW --> TX[Microservicio de Transacciones]
+    TX --> VAL{¿CSV válido?}
+    VAL -->|Sí| AP[Microservicio de Aprobaciones]
+    VAL -->|No| REJ([Lote rechazado])
+    AP --> M[Maker]
+    M --> C[Checker]
+    C --> A[Authorizer]
+    A --> INT[Integración Bancaria]
+    INT --> CORE[Core Bancario]
+    CORE --> NOT[Microservicio de Notificaciones]
 ```
 
 ---
 
 # 2. Integración del servicio de autenticación de la Práctica 2
 
-No recomiendo crear nuevamente la autenticación.
+Para este proyecto, la autenticación no se vuelve a implementar desde cero, sino que se integra y reutiliza el servicio desarrollado en la Práctica 2. Esta estrategia asegura la compatibilidad con los sistemas heredados de la empresa y reduce significativamente el tiempo de desarrollo.
 
-Se reutiliza el servicio existente:
+El flujo de autenticación garantiza que ningún usuario interactúe directamente con los microservicios de negocio sin antes haber sido validado y autenticado correctamente:
 
-```text
-Usuario
-   ↓ usuario/password
-Servicio Auth Práctica 2
-   ↓
-OAuth
-   ↓
-JWT - duración 12 horas
-   ↓
-Usuario
-   ↓ JWT
-API Gateway
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant Auth as Servicio Auth - Práctica 2
+    participant OAuth as Proveedor OAuth
+    participant GW as API Gateway
+
+    U->>Auth: Ingresar usuario y contraseña
+    Auth->>OAuth: Autenticar credenciales
+    OAuth-->>Auth: Identidad confirmada
+    Auth-->>U: Emitir JWT (vigencia: 12 horas)
+    U->>GW: Solicitud con JWT
+    GW->>GW: Validar token, rol y permisos
 ```
 
-El JWT puede contener, conceptualmente:
+El JWT resultante es firmado digitalmente (por ejemplo, utilizando algoritmos como HS256 o RS256) y contiene los "claims" o afirmaciones necesarias para que el API Gateway tome decisiones de autorización de forma autónoma, sin necesidad de consultar repetidamente a la base de datos en cada petición. El contenido (payload) típico es el siguiente:
 
 ```json
 {
@@ -75,45 +71,42 @@ El JWT puede contener, conceptualmente:
 }
 ```
 
-El API Gateway valida:
+Para garantizar la seguridad perimetral y el control de acceso, el API Gateway inspecciona cada petición entrante y valida de forma estricta los siguientes aspectos del token:
 
-* que exista token;
-* que no esté vencido;
-* identidad del usuario;
-* rol;
-* permisos para acceder a determinada ruta.
+* **Existencia y formato:** Verifica que el token esté presente en el header `Authorization` (como un `Bearer token`) y que esté bien formado estructuralmente.
+* **Vigencia:** Confirma que el token no haya expirado (mediante la validación del claim `exp`).
+* **Autenticidad e Integridad:** Comprueba mediante la clave secreta o pública que el token fue firmado por el Servicio de Autenticación y no ha sido alterado.
+* **Identidad:** Determina qué usuario específico está realizando la petición.
+* **Rol y Permisos:** Analiza los roles del usuario para conceder o denegar el acceso a la ruta solicitada, aplicando el principio de menor privilegio.
 
-Por ejemplo:
+La autorización de las rutas y operaciones se distribuye de manera granular y estricta según el rol del usuario:
 
-```text
-POST /transactions/batches
-→ MAKER
-
-POST /approvals/{batchId}/check
-→ CHECKER
-
-POST /approvals/{batchId}/authorize
-→ AUTHORIZER
+```mermaid
+flowchart LR
+    GW[API Gateway]
+    GW -->|POST /transactions/batches| MAKER[Rol: MAKER]
+    GW -->|POST /approvals/{batchId}/check| CHECKER[Rol: CHECKER]
+    GW -->|POST /approvals/{batchId}/authorize| AUTHORIZER[Rol: AUTHORIZER]
 ```
 
 ---
 
 # 3. Microservicio 1: Transacciones
 
-## Responsabilidad
+## Responsabilidad Principal
 
-Se encarga de:
+Este es el microservicio central para la captura de datos. Su propósito principal es aislar la lógica de procesamiento de archivos masivos y las validaciones de negocio iniciales.
 
-* crear lotes;
-* recibir archivos CSV;
-* guardar información del archivo;
-* validar transacciones;
-* consultar lotes;
-* consultar transacciones;
-* guardar estados;
-* mantener historial.
+Sus responsabilidades específicas incluyen:
 
-No debe decidir quién puede aprobar una transacción. Eso corresponde al **Microservicio de Aprobaciones**.
+* **Gestión de Lotes (Batches):** Permite crear, listar y consultar lotes de pagos. Cada lote agrupa múltiples transacciones que deben procesarse en conjunto.
+* **Procesamiento de Archivos CSV:** Recibe el archivo, lo parsea de forma asíncrona para no bloquear el API, y extrae los registros individuales.
+* **Validaciones Estructurales y de Negocio:** Verifica que cada transacción cumpla con las reglas (por ejemplo, cuenta de origen válida, monto mayor a cero, moneda soportada). Las transacciones inválidas se marcan con su respectivo error.
+* **Almacenamiento de Metadatos:** Guarda referencias al archivo físico (ubicación, nombre, checksum) pero no el archivo en sí.
+* **Trazabilidad (Historial):** Mantiene un registro inmutable de todos los cambios de estado por los que pasa un lote (ej. CREATED, VALIDATING, PENDING_CHECKER, etc.).
+
+**Límites del contexto (Bounded Context):**
+Es muy importante destacar que este servicio **no toma decisiones de autorización de flujo**. No sabe ni le interesa qué usuario específico debe aprobar el lote, ni qué roles existen. Toda la lógica de "Maker → Checker → Authorizer" corresponde única y exclusivamente al **Microservicio de Aprobaciones**.
 
 ---
 
@@ -182,11 +175,9 @@ erDiagram
     TRANSACTION ||--o{ VALIDATION_RESULT : produces
 ```
 
-## Idea importante
+## Almacenamiento del archivo
 
-El archivo CSV físico **no se guarda directamente en la base de datos**.
-
-La BD guarda algo como:
+El archivo CSV físico **no se guarda directamente en la base de datos**. La base de datos conserva únicamente sus metadatos:
 
 ```text
 batch_id: 10025
@@ -194,100 +185,7 @@ file_name: pagos_agosto.csv
 file_path: /transactions/2026/08/10025.csv
 ```
 
-Mientras el archivo está realmente en FTP/Object Storage.
-
----
-
-# 5. Diagrama de clases — Microservicio de Transacciones
-
-```mermaid
-classDiagram
-
-    class Batch {
-        +UUID id
-        +String fileName
-        +String filePath
-        +BatchStatus status
-        +Integer totalTransactions
-        +Decimal totalAmount
-        +UUID createdBy
-        +DateTime createdAt
-
-        +create()
-        +changeStatus()
-        +calculateTotal()
-    }
-
-    class Transaction {
-        +UUID id
-        +String sourceAccount
-        +String destinationAccount
-        +Decimal amount
-        +String currency
-        +String description
-        +TransactionStatus status
-
-        +validate()
-        +markValid()
-        +markInvalid()
-    }
-
-    class ValidationResult {
-        +UUID id
-        +Boolean valid
-        +String validationType
-        +String message
-        +DateTime validatedAt
-    }
-
-    class FileMetadata {
-        +UUID id
-        +String originalName
-        +String storedName
-        +String storagePath
-        +String checksum
-        +Long fileSize
-    }
-
-    class BatchHistory {
-        +UUID id
-        +String previousStatus
-        +String newStatus
-        +UUID changedBy
-        +DateTime changedAt
-    }
-
-    Batch "1" --> "*" Transaction : contiene
-    Batch "1" --> "1" FileMetadata : archivo
-    Batch "1" --> "*" BatchHistory : historial
-    Transaction "1" --> "*" ValidationResult : validaciones
-```
-
----
-
-# 6. Microservicio 2: Aprobaciones
-
-Este es uno de los servicios más importantes.
-
-Tiene una única responsabilidad:
-
-> Controlar que un lote pase correctamente por Maker → Checker → Authorizer.
-
-No debería encargarse de leer archivos CSV ni comunicarse directamente con el Core.
-
-Estados posibles:
-
-```text
-PENDING_CHECKER
-CHECKER_APPROVED
-PENDING_AUTHORIZER
-AUTHORIZED
-REJECTED
-```
-
----
-
-# 7. Diagrama ER — Microservicio de Aprobaciones
+El archivo se almacena en FTP u Object Storage.
 
 ```mermaid
 erDiagram
@@ -390,24 +288,14 @@ classDiagram
 
 # 9. Microservicio 3: Integración Bancaria
 
-Este servicio sirve como intermediario entre nuestra aplicación y el Core Bancario.
+Este servicio funciona como intermediario entre la aplicación y el Core Bancario. De esta forma, el servicio de transacciones no contiene código específico del banco.
 
-Eso evita que:
+La comunicación se distribuye así:
 
-```text
-Servicio Transacciones
-```
-
-tenga código específico del banco.
-
-La responsabilidad queda mucho más clara:
-
-```text
-Aprobaciones
-     ↓
-Integración Bancaria
-     ↓
-Core Bancario externo
+```mermaid
+flowchart LR
+    AP[Microservicio de Aprobaciones] -->|Lote autorizado| INT[Integración Bancaria]
+    INT -->|Solicitud segura| CORE[Core Bancario externo]
 ```
 
 Se encarga de:
@@ -512,22 +400,16 @@ classDiagram
 
 # 12. Microservicio 4: Notificaciones
 
-Su responsabilidad es sencilla:
+Este servicio recibe los eventos que requieren comunicación con los clientes:
 
-> Recibir eventos que requieran comunicación y enviar las notificaciones correspondientes.
+El flujo de notificación es el siguiente:
 
-Por ejemplo:
-
-```text
-Lote autorizado
-       ↓
-Transacciones enviadas al Core
-       ↓
-Evento
-       ↓
-Notification Service
-       ↓
-Correos
+```mermaid
+flowchart LR
+    A[Lote autorizado] --> B[Transacciones enviadas al Core]
+    B -->|Publica evento| E[(Message Broker)]
+    E --> N[Notification Service]
+    N -->|Envía| C[Correos a clientes]
 ```
 
 ---
@@ -618,42 +500,31 @@ classDiagram
 
 # 15. Flujo de aprobación Maker → Checker → Authorizer
 
-Aquí hay algo importante.
+El proceso inicia cuando el **Maker** crea el lote y carga el archivo CSV:
 
-**Maker realmente inicia el proceso creando/cargando el lote.**
-
-Luego:
-
-```text
-MAKER
-  ↓
-Carga CSV
-  ↓
-Validación
-  ↓
-CHECKER
-  ↓
-Revisa
-  ↓
-AUTHORIZER
-  ↓
-Autoriza
-  ↓
-Core Bancario
+```mermaid
+flowchart LR
+    M[Maker] -->|Carga CSV| V{Validación}
+    V -->|Válido| C[Checker]
+    V -->|Inválido| R1([Lote rechazado])
+    C -->|Aprueba| A[Authorizer]
+    C -->|Rechaza| R2([Lote rechazado])
+    A -->|Autoriza| CORE[Core Bancario]
+    A -->|Rechaza| R3([Lote rechazado])
 ```
 
-Las reglas serían:
+El flujo se divide en tres pasos:
 
 ### Paso 1 — Maker
 
 Carga el archivo CSV y genera el lote.
 
-```text
-CREATED
-   ↓
-VALIDATING
-   ↓
-PENDING_CHECKER
+```mermaid
+stateDiagram-v2
+    [*] --> CREATED
+    CREATED --> VALIDATING
+    VALIDATING --> PENDING_CHECKER: CSV válido
+    VALIDATING --> REJECTED: CSV inválido
 ```
 
 ### Paso 2 — Checker
@@ -669,31 +540,30 @@ REJECT
 
 Si aprueba:
 
-```text
-PENDING_CHECKER
-       ↓
-CHECKER_APPROVED
-       ↓
-PENDING_AUTHORIZER
+```mermaid
+stateDiagram-v2
+    PENDING_CHECKER --> CHECKER_APPROVED: APPROVE
+    PENDING_CHECKER --> REJECTED: REJECT
+    CHECKER_APPROVED --> PENDING_AUTHORIZER
 ```
 
 ### Paso 3 — Authorizer
 
 Realiza la autorización final.
 
-```text
-PENDING_AUTHORIZER
-        ↓
-AUTHORIZED
+```mermaid
+stateDiagram-v2
+    PENDING_AUTHORIZER --> AUTHORIZED: APPROVE
+    PENDING_AUTHORIZER --> REJECTED: REJECT
 ```
 
-En ese momento el lote ya puede enviarse al Core Bancario.
+Después de la autorización, el lote queda listo para enviarse al Core Bancario.
 
 ---
 
 # 16. UML de estados de aprobación
 
-Mermaid permite representarlo de manera muy clara:
+El ciclo completo de estados se muestra a continuación:
 
 ```mermaid
 stateDiagram-v2
@@ -724,8 +594,6 @@ stateDiagram-v2
     REJECTED --> [*]
     COMPLETED --> [*]
 ```
-
-Este diagrama te recomiendo mucho incluirlo porque explica perfectamente el flujo de los estados.
 
 ---
 
@@ -786,25 +654,24 @@ sequenceDiagram
 
 # 18. Secuencia UML — Envío al Core Bancario
 
-Aquí recomiendo utilizar comunicación asíncrona.
+Para este envío se utiliza comunicación asíncrona.
 
 En lugar de:
 
-```text
-Approval → HTTP → CoreIntegration
+```mermaid
+flowchart LR
+    AP[Approval Service] -->|HTTP síncrono| CORE[Core Integration]
 ```
 
-utilizamos:
+El flujo implementado es:
 
-```text
-Approval
-   ↓ evento
-Message Broker
-   ↓
-Core Integration
+```mermaid
+flowchart LR
+    AP[Approval Service] -->|Publica evento BatchAuthorized| MQ[(Message Broker)]
+    MQ -->|Consume evento| CORE[Core Integration]
 ```
 
-Así, si el Core está temporalmente caído, no perdemos el lote.
+Si el Core no está disponible temporalmente, el mensaje permanece en el broker y puede procesarse después.
 
 ```mermaid
 sequenceDiagram
@@ -878,7 +745,7 @@ sequenceDiagram
 
 # 20. Diagrama UML de componentes
 
-Mermaid actualmente no tiene una sintaxis `componentDiagram` UML nativa como PlantUML, por lo que lo más estable es representarlo mediante `flowchart`, usando estereotipos `<<component>>`.
+El diagrama utiliza `flowchart` y estereotipos `<<component>>` para representar los componentes de la arquitectura.
 
 ```mermaid
 flowchart LR
@@ -953,23 +820,17 @@ flowchart LR
     Notification -. logs .-> Logs
 ```
 
-Este sería uno de los diagramas principales que yo colocaría en tu documentación.
-
 ---
 
 # 21. Estrategia para almacenar los CSV
 
-No almacenaría los CSV dentro de PostgreSQL.
+Los archivos CSV se almacenan fuera de PostgreSQL:
 
-Tendría:
-
-```text
-                 MS Transacciones
-                    /        \
-                   /          \
-                  ↓            ↓
-           PostgreSQL     Object Storage
-                          FTP / S3 / MinIO
+```mermaid
+flowchart TD
+    TX[Microservicio de Transacciones]
+    TX -->|Metadatos y estados| DB[(PostgreSQL)]
+    TX -->|Archivos CSV| OBJ[(Object Storage<br/>FTP / S3 / MinIO)]
 ```
 
 La base de datos almacena:
@@ -991,7 +852,7 @@ El almacenamiento conserva:
 archivo.csv
 ```
 
-Una estructura podría ser:
+La estructura de almacenamiento es:
 
 ```text
 /transactions
@@ -1002,79 +863,65 @@ Una estructura podría ser:
                 validated.csv
 ```
 
-Por ejemplo:
+Una ruta completa queda de esta forma:
 
 ```text
 /transactions/2026/08/8f81-abc/original.csv
 ```
 
-### ¿Por qué?
-
-Porque una base de datos está mejor preparada para consultar información estructurada.
-
-Mientras FTP/Object Storage está preparado para almacenar archivos.
+PostgreSQL se usa para consultar información estructurada, mientras que FTP u Object Storage conserva los archivos.
 
 ---
 
 # 22. Base de datos por microservicio
 
-Un principio muy importante sería:
+Cada microservicio es propietario de su información.
 
-> Cada microservicio es propietario de su propia información.
+Se evita que todos los servicios utilicen una misma base de datos:
 
-No:
-
-```text
-                Una única DB
-                 ↑ ↑ ↑ ↑
-                 │ │ │ │
-            todos los servicios
+```mermaid
+flowchart BT
+    TX[Transacciones] --> DB[(Base de datos compartida)]
+    AP[Aprobaciones] --> DB
+    INT[Integración] --> DB
+    NOT[Notificaciones] --> DB
 ```
 
-Preferiblemente:
+Cada servicio mantiene su propia base de datos:
 
-```text
-Transacciones ─────── PostgreSQL Transactions
-
-Aprobaciones ─────── PostgreSQL Approvals
-
-Integración ───────── PostgreSQL Integration
-
-Notificaciones ────── PostgreSQL Notifications
+```mermaid
+flowchart LR
+    TX[Transacciones] --> TXDB[(PostgreSQL<br/>Transactions)]
+    AP[Aprobaciones] --> APDB[(PostgreSQL<br/>Approvals)]
+    INT[Integración] --> INTDB[(PostgreSQL<br/>Integration)]
+    NOT[Notificaciones] --> NOTDB[(PostgreSQL<br/>Notifications)]
 ```
 
-No significa obligatoriamente cuatro servidores PostgreSQL.
-
-En desarrollo podrían existir dentro de una misma instancia de PostgreSQL utilizando bases o esquemas separados.
-
-Conceptualmente siguen siendo independientes.
+Esto no requiere cuatro servidores PostgreSQL. En desarrollo se puede usar una sola instancia con bases de datos o esquemas separados, manteniendo la independencia lógica entre servicios.
 
 ---
 
 # 23. Comunicación entre microservicios
 
-Aquí usaría **dos tipos de comunicación**.
+La comunicación entre microservicios se divide en **REST** y **mensajería**.
 
 ## REST
 
-Para operaciones donde necesitamos respuesta inmediata.
+REST se utiliza cuando la operación necesita una respuesta inmediata:
 
-Por ejemplo:
-
-```text
-API Gateway
-     ↓ REST
-Transacciones
+```mermaid
+flowchart LR
+    GW[API Gateway] -->|REST síncrono| TX[Microservicio de Transacciones]
 ```
 
-También:
+El servicio de integración también consulta las transacciones de un lote mediante REST:
 
-```text
-CoreIntegration
-     ↓ REST
-Transactions
-     ↓
-GET /batches/{id}/transactions
+```mermaid
+sequenceDiagram
+    participant CORE as Core Integration
+    participant TX as Transactions
+    CORE->>TX: GET /batches/{id}/transactions
+    TX-->>CORE: Transacciones del lote
 ```
 
 Ejemplos:
@@ -1094,33 +941,23 @@ POST /api/v1/approvals/{batchId}/reject
 
 ## Mensajería
 
-Para acciones que pueden ejecutarse posteriormente.
+La mensajería se utiliza para las acciones que pueden procesarse de forma asíncrona:
 
-Por ejemplo:
-
-```text
-Approval Service
-       ↓
-BatchAuthorized
-       ↓
-Message Broker
-       ↓
-Core Integration
+```mermaid
+flowchart LR
+    AP[Approval Service] -->|BatchAuthorized| MQ[(Message Broker)]
+    MQ --> CORE[Core Integration]
 ```
 
-Luego:
+Cuando el Core comienza a procesar el lote, se publica otro evento:
 
-```text
-Core Integration
-       ↓
-BatchProcessing
-       ↓
-Message Broker
-       ↓
-Notification Service
+```mermaid
+flowchart LR
+    CORE[Core Integration] -->|BatchProcessing| MQ[(Message Broker)]
+    MQ --> NOT[Notification Service]
 ```
 
-Podríamos manejar eventos como:
+Los eventos definidos son:
 
 ```text
 BatchCreated
@@ -1133,7 +970,7 @@ BatchCompleted
 BatchFailed
 ```
 
-Esto hace el sistema más desacoplado.
+Con estos eventos, los servicios no dependen de una respuesta inmediata entre sí.
 
 ---
 
@@ -1186,11 +1023,9 @@ flowchart TD
 
 # 25. Estrategia de logging centralizado
 
-El requisito específicamente pide:
+El sistema requiere un registro centralizado y auditable.
 
-> sistema de logging centralizado y auditable.
-
-No debemos tener:
+Los archivos de log no deben quedar separados en cada servidor:
 
 ```text
 transactions.log
@@ -1198,20 +1033,19 @@ approvals.log
 notifications.log
 ```
 
-perdidos en diferentes servidores.
+Todos los servicios envían sus registros al mismo sistema:
 
-Todos los servicios mandan sus registros al mismo sistema:
-
-```text
-API Gateway ───────────┐
-Auth ──────────────────┤
-Transactions ──────────┤
-Approvals ─────────────┤
-Core Integration ──────┤──► Logging Centralizado
-Notifications ─────────┘
+```mermaid
+flowchart LR
+    GW[API Gateway] -.->|Logs| LOG[(Logging centralizado)]
+    AUTH[Auth] -.->|Logs| LOG
+    TX[Transactions] -.->|Logs| LOG
+    AP[Approvals] -.->|Logs| LOG
+    CORE[Core Integration] -.->|Logs| LOG
+    NOT[Notifications] -.->|Logs| LOG
 ```
 
-Cada log debería tener al menos:
+Cada registro contiene, como mínimo, los siguientes datos:
 
 ```json
 {
@@ -1225,73 +1059,64 @@ Cada log debería tener al menos:
 }
 ```
 
-Muy importante para este sistema sería usar un:
+Para relacionar los registros de una misma operación se utiliza un identificador de correlación:
 
 ```text
 correlationId
 ```
 
-Por ejemplo:
+Ejemplo:
 
 ```text
 correlationId = TX-893728
 ```
 
-Ese mismo ID acompaña:
+El mismo identificador se propaga entre los servicios:
 
-```text
-API Gateway
-↓
-Transactions
-↓
-Approval
-↓
-Core Integration
-↓
-Notification
+```mermaid
+flowchart LR
+    GW[API Gateway] -->|correlationId| TX[Transactions]
+    TX -->|correlationId| AP[Approval]
+    AP -->|correlationId| CORE[Core Integration]
+    CORE -->|correlationId| NOT[Notification]
 ```
 
-Así puedes buscar:
+Al buscar:
 
 ```text
 TX-893728
 ```
 
-en los logs y ver **todo lo que ocurrió con esa operación**.
+se obtiene el historial completo de la operación en los logs.
 
 ---
 
 # 26. Propuesta de tecnologías para logging
 
-Arquitectónicamente:
+La arquitectura de logging se divide en tres partes:
 
-```text
-Microservicios
-      ↓
-Collector
-      ↓
-Sistema central
+```mermaid
+flowchart LR
+    MS[Microservicios] -->|Envían logs| COL[Collector]
+    COL -->|Agrega y procesa| CENTRAL[(Sistema central)]
 ```
 
-Una opción clásica:
+La implementación seleccionada puede utilizar Fluent Bit o Logstash como collector, Elasticsearch para almacenar los registros y Kibana para consultarlos:
 
-```text
-Microservicios
-      ↓
-Fluent Bit / Logstash
-      ↓
-Elasticsearch
-      ↓
-Kibana
+```mermaid
+flowchart LR
+    MS[Microservicios] --> COL[Fluent Bit / Logstash]
+    COL --> ES[(Elasticsearch)]
+    ES --> KB[Kibana]
 ```
 
-También podrías utilizar:
+Otra alternativa es:
 
 ```text
 Grafana + Loki
 ```
 
-Para la práctica no necesitas necesariamente implementarlo completo si únicamente te solicitan diseño; puedes proponerlo.
+Para el alcance de esta práctica se documenta la arquitectura, aunque sus componentes pueden implementarse posteriormente.
 
 ---
 
@@ -1299,17 +1124,16 @@ Para la práctica no necesitas necesariamente implementarlo completo si únicame
 
 El API Gateway será el único punto público hacia los microservicios.
 
-```text
-Internet
-   ↓
-API Gateway
-   ↓
-┌───────────────┐
-│ Microservicios│
-└───────────────┘
+```mermaid
+flowchart TD
+    NET((Internet)) -->|HTTPS| GW[API Gateway]
+    GW --> AUTH[Authentication Service]
+    GW --> TX[Transaction Service]
+    GW --> AP[Approval Service]
+    GW --> NOT[Notification Service]
 ```
 
-No expondría:
+Las direcciones internas de los servicios no se exponen:
 
 ```text
 transactions-service:3001
@@ -1317,9 +1141,7 @@ approval-service:3002
 notification-service:3003
 ```
 
-directamente.
-
-El usuario solamente debería conocer:
+El usuario accede únicamente a la dirección pública:
 
 ```text
 https://api.banco.com
@@ -1329,56 +1151,46 @@ https://api.banco.com
 
 # 28. Rutas propuestas
 
-Por ejemplo:
+Las rutas se distribuyen de la siguiente manera:
 
-```text
-/api/v1/auth/*
-       ↓
-Authentication Service
-
-/api/v1/batches/*
-       ↓
-Transaction Service
-
-/api/v1/transactions/*
-       ↓
-Transaction Service
-
-/api/v1/approvals/*
-       ↓
-Approval Service
+```mermaid
+flowchart LR
+    GW[API Gateway]
+    GW -->|/api/v1/auth/*| AUTH[Authentication Service]
+    GW -->|/api/v1/batches/*| TX[Transaction Service]
+    GW -->|/api/v1/transactions/*| TX
+    GW -->|/api/v1/approvals/*| AP[Approval Service]
 ```
 
-Integración bancaria y notificaciones **no necesitan necesariamente estar expuestos al usuario**.
+Los servicios de integración bancaria y notificaciones no se exponen al usuario.
 
 ```text
 CoreIntegration
 Notification
 ```
 
-pueden ser únicamente internos.
+Ambos se mantienen dentro de la red interna.
 
 ---
 
 # 29. Funciones del API Gateway
 
-Tu API Gateway tendría:
+El API Gateway ejecuta las siguientes validaciones antes de dirigir la solicitud al microservicio correspondiente:
 
-```text
-Validación JWT
-      ↓
-Autorización
-      ↓
-Rate Limiting
-      ↓
-Routing
-      ↓
-Logging
-      ↓
-Microservicio
+```mermaid
+flowchart LR
+    REQ([Solicitud]) --> JWT{¿JWT válido?}
+    JWT -->|No| E401([401 Unauthorized])
+    JWT -->|Sí| AUTHZ{¿Tiene permisos?}
+    AUTHZ -->|No| E403([403 Forbidden])
+    AUTHZ -->|Sí| RATE{¿Dentro del límite?}
+    RATE -->|No| E429([429 Too Many Requests])
+    RATE -->|Sí| ROUTE[Routing]
+    ROUTE --> LOG[Registrar solicitud]
+    LOG --> MS[Microservicio destino]
 ```
 
-Por ejemplo:
+La distribución de solicitudes queda así:
 
 ```mermaid
 flowchart LR
@@ -1410,9 +1222,9 @@ flowchart LR
 
 ---
 
-# 30. Arquitectura final recomendada
+# 30. Arquitectura final
 
-Juntando todo, la solución que yo defendería para tu práctica sería:
+La arquitectura completa integra los componentes descritos en las secciones anteriores:
 
 ```mermaid
 flowchart LR
