@@ -85,8 +85,8 @@ La autorización de las rutas y operaciones se distribuye de manera granular y e
 flowchart LR
     GW[API Gateway]
     GW -->|POST /transactions/batches| MAKER[Rol: MAKER]
-    GW -->|POST /approvals/{batchId}/check| CHECKER[Rol: CHECKER]
-    GW -->|POST /approvals/{batchId}/authorize| AUTHORIZER[Rol: AUTHORIZER]
+    GW -->|"POST /approvals/{batchId}/check"| CHECKER[Rol: CHECKER]
+    GW -->|"POST /approvals/{batchId}/authorize"| AUTHORIZER[Rol: AUTHORIZER]
 ```
 
 ---
@@ -1226,77 +1226,4 @@ flowchart LR
 
 La arquitectura completa integra los componentes descritos en las secciones anteriores:
 
-```mermaid
-flowchart LR
-
-    User[Usuarios]
-
-    Auth[Servicio OAuth<br/>Práctica 2]
-
-    Gateway[API Gateway]
-
-    subgraph Microservices["Microservicios"]
-
-        Transactions[MS Transacciones]
-
-        Approvals[MS Aprobaciones]
-
-        Integration[MS Integración Bancaria]
-
-        Notifications[MS Notificaciones]
-
-    end
-
-    Broker[Message Broker]
-
-    FileStorage[(FTP / Object Storage)]
-
-    DB1[(DB Transactions)]
-    DB2[(DB Approvals)]
-    DB3[(DB Integration)]
-    DB4[(DB Notifications)]
-
-    Core[Core Bancario Externo]
-
-    Email[Servicio de Email]
-
-    Logging[Logging Centralizado]
-
-    User --> Auth
-    Auth -->|JWT| User
-
-    User --> Gateway
-
-    Gateway --> Transactions
-    Gateway --> Approvals
-
-    Transactions --> DB1
-    Transactions --> FileStorage
-
-    Transactions --> Approvals
-
-    Approvals --> DB2
-
-    Approvals -->|BatchAuthorized| Broker
-
-    Broker --> Integration
-
-    Integration --> DB3
-
-    Integration --> Core
-
-    Integration -->|BatchProcessing| Broker
-
-    Broker --> Notifications
-
-    Notifications --> DB4
-
-    Notifications --> Email
-
-    Gateway -.-> Logging
-    Transactions -.-> Logging
-    Approvals -.-> Logging
-    Integration -.-> Logging
-    Notifications -.-> Logging
-```
-
+![alt text](diagramaArquitectura.jpg)
