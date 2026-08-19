@@ -1,0 +1,158 @@
+services:
+  # ---------------------------------------------------------------------
+  # Infraestructura
+  # ---------------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    container_name: p4-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: p4_user
+      POSTGRES_PASSWORD: p4_password
+      POSTGRES_DB: p4_auth_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init-multi-db.sh:/docker-entrypoint-initdb.d/init-multi-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U p4_user -d p4_auth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: p4-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  # ---------------------------------------------------------------------
+  # Microservicio 1 — auth-service (Node.js/NestJS, REST, Postgres)
+  # Desarrollado en la Práctica 2, reutilizado tal cual en esta práctica.
+  # ---------------------------------------------------------------------
+  auth-service:
+    build:
+      context: ./backend
+    container_name: p4-auth-service
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://p4_user:p4_password@postgres:5432/p4_auth_db?schema=public
+      AUTHORIZATION_SERVICE_URL: http://authorization-service:4001/api
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      authorization-service:
+        condition: service_started
+
+  # ---------------------------------------------------------------------
+  # Microservicio 2 — authorization-service (Node.js/NestJS, REST, sin DB)
+  # Desarrollado en la Práctica 2, reutilizado tal cual en esta práctica.
+  # ---------------------------------------------------------------------
+  authorization-service:
+    build:
+      context: ./authorization-service
+    container_name: p4-authorization-service
+    restart: unless-stopped
+    environment:
+      PORT: 4001
+    ports:
+      - "4001:4001"
+
+  # ---------------------------------------------------------------------
+  # Microservicio 3 — products-service (Python/FastAPI, REST + GraphQL)
+  # ---------------------------------------------------------------------
+  products-service:
+    build:
+      context: ./products-service
+    container_name: p4-products-service
+    restart: unless-stopped
+    environment:
+      PORT: 4002
+      DATABASE_URL: postgresql+psycopg2://p4_user:p4_password@postgres:5432/p4_products_db
+    ports:
+      - "4002:4002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------
+  # Microservicio 4 — orders-service (Node.js/NestJS, REST + GraphQL)
+  # Consume a products-service vía GraphQL para validar precio/stock.
+  # ---------------------------------------------------------------------
+  orders-service:
+    build:
+      context: ./orders-service
+    container_name: p4-orders-service
+    restart: unless-stopped
+    environment:
+      PORT: 4003
+      DATABASE_URL: postgresql://p4_user:p4_password@postgres:5432/p4_orders_db?schema=public
+      PRODUCTS_SERVICE_URL: http://products-service:4002/graphql
+    ports:
+      - "4003:4003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      products-service:
+        condition: service_started
+
+  # ---------------------------------------------------------------------
+  # API Gateway — punto de entrada único, enruta hacia los 4 microservicios
+  # ---------------------------------------------------------------------
+  gateway:
+    build:
+      context: ./gateway
+    container_name: p4-gateway
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      FRONTEND_URL: http://localhost:3000
+      AUTH_SERVICE_URL: http://auth-service:4000
+      AUTHORIZATION_SERVICE_URL: http://authorization-service:4001
+      PRODUCTS_SERVICE_URL: http://products-service:4002
+      ORDERS_SERVICE_URL: http://orders-service:4003
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - authorization-service
+      - products-service
+      - orders-service
+
+  # ---------------------------------------------------------------------
+  # Frontend (Next.js) — habla exclusivamente con el API Gateway
+  # ---------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Next.js "inlinea" las variables NEXT_PUBLIC_* en el bundle del
+        # navegador durante el build, por eso apuntan al puerto publicado en
+        # el host (localhost), no al nombre interno "gateway".
+        NEXT_PUBLIC_API_URL: http://localhost:8080/api
+        NEXT_PUBLIC_GATEWAY_URL: http://localhost:8080
+    container_name: p4-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - gateway
+
+volumes:
+  postgres_data:
+  pgadmin_data:

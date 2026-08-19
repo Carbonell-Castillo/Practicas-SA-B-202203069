@@ -1,0 +1,185 @@
+{
+  "info": {
+    "name": "Práctica 4 - Microservicios (vía API Gateway)",
+    "description": "Contrato de los 4 microservicios, consumidos siempre a través del API Gateway (http://localhost:8080). Incluye REST (auth-service, authorization-service) y GraphQL (products-service, orders-service).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gateway_url", "value": "http://localhost:8080" }
+  ],
+  "item": [
+    {
+      "name": "Gateway",
+      "item": [
+        {
+          "name": "Healthcheck agregado",
+          "request": { "method": "GET", "url": "{{gateway_url}}/health" }
+        },
+        {
+          "name": "Info / mapa de rutas",
+          "request": { "method": "GET", "url": "{{gateway_url}}/" }
+        }
+      ]
+    },
+    {
+      "name": "1. Auth Service (Node.js/NestJS - REST)",
+      "item": [
+        {
+          "name": "Registrar usuario (siempre CLIENT)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{gateway_url}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cliente Demo\",\n  \"email\": \"demo@test.com\",\n  \"password\": \"clave123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{gateway_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@practica.local\",\n  \"password\": \"Admin123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": { "method": "POST", "url": "{{gateway_url}}/api/auth/logout" }
+        },
+        {
+          "name": "Ruta protegida 1 (solo ADMIN)",
+          "request": { "method": "GET", "url": "{{gateway_url}}/api/protected/ruta1" }
+        },
+        {
+          "name": "Ruta protegida 2 (ADMIN y CLIENT)",
+          "request": { "method": "GET", "url": "{{gateway_url}}/api/protected/ruta2" }
+        }
+      ]
+    },
+    {
+      "name": "2. Authorization Service (Node.js/NestJS - REST)",
+      "item": [
+        {
+          "name": "Health",
+          "request": { "method": "GET", "url": "{{gateway_url}}/api/authorization/health" }
+        },
+        {
+          "name": "Validate role/route",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{gateway_url}}/api/authorization/validate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"CLIENT\",\n  \"route\": \"ruta2\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Products Service (Python/FastAPI - REST + GraphQL)",
+      "item": [
+        {
+          "name": "REST - Health",
+          "request": { "method": "GET", "url": "{{gateway_url}}/api/products/health" }
+        },
+        {
+          "name": "REST - Listar productos",
+          "request": { "method": "GET", "url": "{{gateway_url}}/api/products" }
+        },
+        {
+          "name": "REST - Obtener producto por id",
+          "request": { "method": "GET", "url": "{{gateway_url}}/api/products/1" }
+        },
+        {
+          "name": "REST - Crear producto",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{gateway_url}}/api/products",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Webcam HD\",\n  \"description\": \"1080p, micrófono integrado\",\n  \"price\": 29.99,\n  \"stock\": 15\n}"
+            }
+          }
+        },
+        {
+          "name": "GraphQL - Query products",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{gateway_url}}/products/graphql",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query { products { id name description price stock } }\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GraphQL - Mutation createProduct",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{gateway_url}}/products/graphql",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($name: String!, $description: String!, $price: Float!, $stock: Int!) { createProduct(name: $name, description: $description, price: $price, stock: $stock) { id name price stock } }\",\n  \"variables\": { \"name\": \"Auriculares\", \"description\": \"Bluetooth\", \"price\": 39.9, \"stock\": 20 }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Orders Service (Node.js/NestJS - REST + GraphQL)",
+      "item": [
+        {
+          "name": "REST - Listar órdenes",
+          "request": { "method": "GET", "url": "{{gateway_url}}/api/orders" }
+        },
+        {
+          "name": "REST - Crear orden",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{gateway_url}}/api/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"demo-user\",\n  \"items\": [ { \"productId\": 1, \"quantity\": 2 } ]\n}"
+            }
+          }
+        },
+        {
+          "name": "GraphQL - Query orders",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{gateway_url}}/orders/graphql",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query { orders { id userId status total items { productName quantity unitPrice } } }\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GraphQL - Mutation createOrder",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{gateway_url}}/orders/graphql",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation($input: CreateOrderInput!) { createOrder(input: $input) { id total status items { productName quantity unitPrice } } }\",\n  \"variables\": { \"input\": { \"userId\": \"demo-user\", \"items\": [ { \"productId\": 1, \"quantity\": 1 } ] } }\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
