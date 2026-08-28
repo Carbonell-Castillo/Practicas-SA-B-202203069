@@ -1,0 +1,29 @@
+# Cluster local para Práctica 5 (sa-p5). Un solo nodo control-plane con los
+# puertos 80/443 publicados hacia el host para que el Ingress Controller
+# (ingress-nginx) sea alcanzable en http://localhost sin necesitar
+# LoadBalancer/NodePort expuestos por los propios servicios.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: sa-p5
+# kindnetd (el CNI por defecto de kind) NO aplica NetworkPolicy. Se desactiva
+# aquí y se instala Calico aparte (ver README) para que las NetworkPolicies
+# del chart (sección E de Make.md) realmente bloqueen tráfico, no solo se
+# vean bien en el YAML.
+networking:
+  disableDefaultCNI: true
+  podSubnet: "10.244.0.0/16"
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP
