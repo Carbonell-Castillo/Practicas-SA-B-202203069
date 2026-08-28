@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model CronExecution {
+  id         String   @id @default(uuid())
+  executedAt DateTime @default(now())
+  carnet     String
+
+  @@map("cron_executions")
+}

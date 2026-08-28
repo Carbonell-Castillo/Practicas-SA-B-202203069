@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0a0a0d;
+  --surface: #131318;
+  --surface-raised: #1a1a21;
+  --border: #26262f;
+  --text: #f2f2f0;
+  --text-muted: #93939f;
+  --accent: #e8a33d;
+  --accent-hover: #f2b458;
+  --accent-foreground: #1a1305;
+  --danger: #f2545b;
+  --danger-bg: #2a1416;
+  --danger-border: #5c2328;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  color: var(--text);
+  background: var(--bg);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+}
+
+@layer components {
+  .auth-shell {
+    @apply grid min-h-screen w-full lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)];
+  }
+
+  .auth-brand {
+    @apply relative hidden overflow-hidden p-12 lg:flex lg:flex-col lg:justify-between;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(232, 163, 61, 0.16), transparent 45%),
+      radial-gradient(circle at 85% 75%, rgba(232, 163, 61, 0.10), transparent 50%),
+      var(--surface);
+    border-right: 1px solid var(--border);
+  }
+
+  .auth-brand-grid {
+    @apply pointer-events-none absolute inset-0 opacity-[0.05];
+    background-image:
+      linear-gradient(to right, var(--text) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--text) 1px, transparent 1px);
+    background-size: 42px 42px;
+  }
+
+  .auth-form-wrap {
+    @apply flex min-h-screen items-center justify-center bg-[var(--bg)] px-6 py-12;
+  }
+
+  .auth-card {
+    @apply w-full max-w-sm;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-wide text-[var(--text-muted)];
+  }
+
+  .field-input {
+    @apply w-full rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-[15px] text-[var(--text)] outline-none transition-all placeholder:text-[var(--text-muted)]/60 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/25;
+  }
+
+  .btn-primary {
+    @apply flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] transition-all hover:bg-[var(--accent-hover)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .link-accent {
+    @apply font-medium text-[var(--accent)] transition-colors hover:text-[var(--accent-hover)];
+  }
+
+  .alert-error {
+    @apply rounded-lg border px-3.5 py-2.5 text-sm;
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: #ffb3b6;
+  }
+}

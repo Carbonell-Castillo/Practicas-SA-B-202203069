@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model OrderNotification {
+  id         String   @id @default(uuid())
+  orderId    String
+  payload    Json
+  receivedAt DateTime @default(now())
+
+  @@map("order_notifications")
+}
+
+model CronSummary {
+  id          String   @id @default(uuid())
+  generatedAt DateTime
+  carnet      String
+  payload     Json
+  receivedAt  DateTime @default(now())
+
+  @@map("cron_summaries")
+}

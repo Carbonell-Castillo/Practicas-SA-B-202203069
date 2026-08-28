@@ -1,0 +1,221 @@
+openapi: 3.0.3
+info:
+  title: API Gateway — Práctica 4
+  description: >
+    Punto de entrada único del sistema. Enruta hacia los 4 microservicios:
+    auth-service, authorization-service, products-service y orders-service.
+    Cada microservicio publica además su propio contrato detallado en
+    `/api/docs` (Swagger, para los servicios REST/NestJS) o `/graphql`
+    (GraphiQL, para los dos servicios GraphQL).
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8080
+    description: API Gateway (local / docker-compose)
+tags:
+  - name: gateway
+  - name: auth-service
+  - name: authorization-service
+  - name: products-service
+  - name: orders-service
+paths:
+  /health:
+    get:
+      tags: [gateway]
+      summary: Healthcheck agregado de los 4 microservicios
+      responses:
+        "200":
+          description: Todos los microservicios responden
+        "503":
+          description: Al menos un microservicio no responde
+  /api/auth/register:
+    post:
+      tags: [auth-service]
+      summary: Registra un usuario nuevo (siempre con rol CLIENT)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "201": { description: Usuario creado }
+        "409": { description: El correo ya está registrado }
+  /api/auth/login:
+    post:
+      tags: [auth-service]
+      summary: Inicia sesión y entrega el JWT en una cookie HttpOnly
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "200": { description: Login exitoso, cookie access_token emitida }
+        "401": { description: Credenciales inválidas }
+  /api/auth/logout:
+    post:
+      tags: [auth-service]
+      summary: Cierra la sesión (limpia la cookie)
+      responses:
+        "200": { description: Sesión cerrada }
+  /api/protected/ruta1:
+    get:
+      tags: [auth-service]
+      summary: Ruta protegida — solo rol ADMIN
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200": { description: Acceso concedido }
+        "401": { description: No autenticado }
+        "403": { description: Rol sin permiso }
+  /api/protected/ruta2:
+    get:
+      tags: [auth-service]
+      summary: Ruta protegida — roles ADMIN y CLIENT
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200": { description: Acceso concedido }
+        "401": { description: No autenticado }
+        "403": { description: Rol sin permiso }
+  /api/authorization/validate:
+    post:
+      tags: [authorization-service]
+      summary: Valida si un rol puede acceder a una ruta lógica
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role, route]
+              properties:
+                role: { type: string, enum: [ADMIN, CLIENT] }
+                route: { type: string, example: ruta1 }
+      responses:
+        "200":
+          description: "{ allowed: boolean }"
+  /api/products:
+    get:
+      tags: [products-service]
+      summary: Lista el catálogo de productos
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [products-service]
+      summary: Crea un producto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, price]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                price: { type: number }
+                stock: { type: integer }
+      responses:
+        "201": { description: Producto creado }
+  /api/products/{id}:
+    get:
+      tags: [products-service]
+      summary: Obtiene un producto por id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: OK }
+        "404": { description: No encontrado }
+  /products/graphql:
+    post:
+      tags: [products-service]
+      summary: Endpoint GraphQL de products-service (query/mutation)
+      description: >
+        Ejemplos: `query { products { id name price stock } }`,
+        `mutation { createProduct(name:"X", description:"", price:9.99, stock:5) { id } }`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string }
+                variables: { type: object }
+      responses:
+        "200": { description: OK }
+  /api/orders:
+    get:
+      tags: [orders-service]
+      summary: Lista todas las órdenes
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [orders-service]
+      summary: Crea una orden (valida stock/precio contra products-service)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, items]
+              properties:
+                userId: { type: string }
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [productId, quantity]
+                    properties:
+                      productId: { type: integer }
+                      quantity: { type: integer }
+      responses:
+        "201": { description: Orden creada }
+  /api/orders/{id}:
+    get:
+      tags: [orders-service]
+      summary: Obtiene una orden por id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+  /orders/graphql:
+    post:
+      tags: [orders-service]
+      summary: Endpoint GraphQL de orders-service (query/mutation)
+      description: >
+        Ejemplos: `query { orders { id userId total status } }`,
+        `mutation { createOrder(input:{userId:"u1", items:[{productId:1, quantity:2}]}) { id total } }`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string }
+                variables: { type: object }
+      responses:
+        "200": { description: OK }
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token

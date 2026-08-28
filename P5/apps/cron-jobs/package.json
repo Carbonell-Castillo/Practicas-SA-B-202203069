@@ -1,0 +1,36 @@
+{
+  "name": "cron-jobs",
+  "version": "1.0.0",
+  "description": "Cronjobs de la Práctica 5 (heartbeat + summary) — NestJS standalone (createApplicationContext) + Prisma + amqplib",
+  "author": "",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.0.1",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
+    "prisma": "^7.9.1",
+    "amqplib": "^0.10.4",
+    "pg": "^8.22.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@types/amqplib": "^0.10.5",
+    "@types/node": "^24.0.0",
+    "dotenv": "^16.4.7",
+    "source-map-support": "^0.5.21",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3"
+  }
+}
