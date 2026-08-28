@@ -1,0 +1,88 @@
+componentLabel: frontend
+
+replicaCount: 2
+
+image:
+  # NEXT_PUBLIC_API_URL / NEXT_PUBLIC_GATEWAY_URL se hornean en el bundle en build-time
+  # (docker build --build-arg), no son leíbles en runtime vía ConfigMap. Reconstruir la
+  # imagen si cambia el origen público del Ingress. Ver docs/evidence y README.
+  repository: sa-platform/frontend
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  port: 3000
+  targetPort: 3000
+
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: true
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 300m
+    memory: 256Mi
+
+probes:
+  startup:
+    path: /
+    periodSeconds: 3
+    failureThreshold: 15
+  liveness:
+    path: /
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    path: /
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+updateStrategy:
+  maxUnavailable: 0
+  maxSurge: 1
+
+config:
+  NODE_ENV: "production"
+
+secret: {}
+
+extraEnv: []
+# next.js standalone server intenta escribir cache incremental bajo .next/cache; con
+# readOnlyRootFilesystem: true necesita un volumen escribible montado ahí.
+extraVolumes:
+  - name: next-cache
+extraVolumeMounts:
+  - name: next-cache
+    mountPath: /app/.next/cache
