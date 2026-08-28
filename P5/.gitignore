@@ -1,0 +1,21 @@
+# Secretos reales (nunca versionados — ver charts/sa-platform/values.example.yaml)
+charts/sa-platform/values-secrets.yaml
+charts/**/values-secrets.yaml
+
+# Dependencias de Helm resueltas por `helm dependency update` (se regeneran)
+charts/sa-platform/charts/*.tgz
+charts/sa-platform/charts/postgresql/
+charts/sa-platform/charts/rabbitmq/
+charts/sa-platform/Chart.lock
+
+# Node / build artifacts de las apps
+apps/**/node_modules/
+apps/**/dist/
+apps/**/.next/
+apps/**/*.tsbuildinfo
+
+# Binarios locales descargados para esta sesión (kind/helm)
+infra/kind/*.exe
+
+# Evidencia local pesada (logs crudos, no los resúmenes .md)
+docs/evidence/*.log
