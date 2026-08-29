@@ -297,3 +297,35 @@ kubectl get hpa,pdb,resourcequota,limitrange -n sa-p5
 helm uninstall sa-platform -n sa-p5
 kind delete cluster --name sa-p5
 ```
+El error que te está saliendo (`El operador '<' está reservado para uso futuro`) se debe a que estás usando **PowerShell**, y PowerShell no maneja la redirección de archivos con `<` de la misma manera que lo hace la terminal de Linux o el CMD clásico de Windows.
+
+Además, estás ubicado dentro de la carpeta `charts\sa-platform`, por lo que no encontrará la carpeta `k6`. 
+
+Para solucionarlo y ver su funcionamiento, sigue estos pasos:
+
+### 1. Ejecutar el test correctamente en PowerShell
+Primero, asegúrate de regresar a la carpeta principal del proyecto (P5):
+```powershell
+cd ..\..
+```
+
+Y luego, para correr el comando en PowerShell usa `Get-Content` (que lee el archivo) y usa el "pipe" `|` para pasarlo a Docker:
+```powershell
+Get-Content k6\load-test.js | docker run --rm -i -e BASE_URL=http://host.docker.internal grafana/k6 run -
+```
+
+### 2. ¿Se puede ver Grafana? ¿Cómo veo que funciona?
+El nombre de la imagen es `grafana/k6` (porque la empresa Grafana compró la herramienta k6), pero **este comando no levanta un dashboard web de Grafana**. k6 por defecto imprime los resultados y métricas directamente en la misma consola al finalizar la prueba (peticiones por segundo, latencia, errores).
+
+**Para ver cómo está funcionando "en vivo" en tu clúster**, la mejor forma es abrir **otra ventana de terminal (PowerShell)** mientras se ejecuta el test, y monitorear cómo Kubernetes escala los recursos automáticamente por la carga.
+
+En esa nueva terminal, corre este comando para ver cómo sube el % de CPU y las réplicas:
+```powershell
+kubectl get hpa -n sa-p5 -w
+```
+*(El flag `-w` significa "watch", se quedará la pantalla escuchando y cada vez que haya un cambio en el uso de CPU o se levante un nuevo pod, te lo mostrará en tiempo real).*
+
+Si quieres ver cómo se van creando los pods de los microservicios para soportar la carga, puedes abrir una tercera terminal y poner:
+```powershell
+kubectl get pods -n sa-p5 -w
+```
