@@ -79,10 +79,10 @@ flowchart LR
         PRODpod["products-service"]
     end
 
-    ATTACKER -.->|"❌ bloqueado — timeout 5s<br/>sin allow-* que lo cubra"| PGpod
-    ATTACKER -.->|"❌ bloqueado — timeout 5s"| MQpod
-    ATTACKER -.->|"❌ bloqueado — timeout 5s"| PRODpod
-    GWpod ==>|"✅ permitido<br/>allow-gateway-to-services"| PRODpod
+    ATTACKER -.->|"bloqueado — timeout 5s<br/>sin allow-* que lo cubra"| PGpod
+    ATTACKER -.->|"bloqueado — timeout 5s"| MQpod
+    ATTACKER -.->|"bloqueado — timeout 5s"| PRODpod
+    GWpod ==>|"permitido<br/>allow-gateway-to-services"| PRODpod
 ```
 
 Verificado en la sección 4.4: desde un pod sin los labels del chart, las
@@ -397,8 +397,8 @@ evento asíncrono a RabbitMQ).
 | **% de error global** | 30.20% (10 653 / 35 274) |
 | **% éxito en `GET /api/products`** | ~100% |
 | **% éxito en `POST /api/orders`** | 0.48% (51/10 704) tras agotar stock |
-| Threshold `p(95)<1500ms` | ✅ cumplido |
-| Threshold `errors rate<0.05` | ❌ incumplido (ver análisis) |
+| Threshold `p(95)<1500ms` | cumplido |
+| Threshold `errors rate<0.05` | incumplido (ver análisis) |
 
 ### 5.3 Por qué el 30.20% de error NO es una falla de infraestructura
 
