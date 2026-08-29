@@ -1,4 +1,5 @@
-# Documentación técnica — sa-platform (Práctica 5)
+202203069
+# Documentación técnica — sa-platform 
 
 Namespace `sa-p5`. Chart Helm padre `sa-platform` (`charts/sa-platform`), 8
 subcharts de microservicios + 2 dependencias de infraestructura (Postgres,
@@ -9,134 +10,87 @@ guía rápida original.
 
 ## 1. Diagrama de arquitectura
 
-### 1.1 Vista general (externo/interno, síncrono/asíncrono, límites de red)
+### 1.1 Vista general (externo/interno al clúster, con límites de NetworkPolicy)
 
-```
-                                    FUERA DEL CLÚSTER
-                                    ══════════════════
-                                    Usuario / cliente HTTP
-                                              │
-                                              │ HTTP (host: localhost)
-┌─────────────────────────────────────────────┼──────────────────────────────────────────┐
-│  CLÚSTER KUBERNETES (kind) — namespace sa-p5 │                                          │
-│                                              ▼                                          │
-│                                   ┌─────────────────────┐                               │
-│                                   │  Ingress (nginx)     │  ← único recurso con entrada  │
-│                                   │  único punto de      │    externa (Ingress Class     │
-│                                   │  entrada al clúster  │    nginx); todo lo demás es   │
-│                                   └──────────┬───────────┘    ClusterIP, sin NodePort/LB │
-│                        ┌─────────────────────┼─────────────────────┐                    │
-│                        │ /api /products/graphql /orders/graphql     │ /                  │
-│                        │ /health /docs                              │                    │
-│                        ▼                                            ▼                    │
-│   ┌───────────────────────────────┐                    ┌───────────────────────────┐    │
-│   │   ZONA EDGE (NetPol:           │                    │  frontend :3000            │    │
-│   │   allow-ingress-to-edge)       │                    │  (Next.js)                  │    │
-│   │  ┌───────────────────────┐     │◄───egress─────────┤  allow-frontend-egress-    │    │
-│   │  │  gateway :8080         │     │   -to-gateway      │  to-gateway                 │    │
-│   │  │  (Express reverse      │     │                    └───────────────────────────┘    │
-│   │  │   proxy)               │     │                                                      │
-│   │  └───────────┬────────────┘     │                                                      │
-│   └──────────────┼──────────────────┘                                                      │
-│                   │ NetPol: allow-gateway-to-services /                                    │
-│                   │         allow-gateway-egress-to-services                               │
-│                   │ (SOLO gateway puede alcanzar estos 4)                                   │
-│      ┌────────────┼────────────┬─────────────────┬───────────────┐                         │
-│      ▼            ▼            ▼                 ▼               │                         │
-│ ┌──────────┐ ┌───────────────┐ ┌───────────────┐ ┌─────────────┐ │                         │
-│ │auth-     │ │authorization- │ │products-      │ │orders-      │ │                         │
-│ │service   │─▶│service        │ │service :4002  │◄│service :4003│ │                         │
-│ │:4000     │ │:4001 (stateless)│ │(FastAPI/GQL) │ │(NestJS/GQL) │ │                         │
-│ └────┬─────┘ └───────────────┘ └───────┬────────┘ └──────┬──────┘ │                         │
-│      │ NetPol: allow-auth-egress-       │  NetPol: allow-orders-  │                         │
-│      │ to-authorization (sync)          │  egress-to-products     │                         │
-│      │                                  │  (sync GraphQL)         │                         │
-│      │                                  │                         │ evento asíncrono        │
-│      │                                  │                         │ "order.created"         │
-│      │  NetPol: allow-db-clients-*      │                         ▼ (no espera respuesta)   │
-│      ▼  (solo auth/cron/notif/orders/   │                  ┌──────────────┐                 │
-│  ┌────────────┐ products → postgres)    │                  │  RabbitMQ    │                 │
-│  │ Postgres   │◄───────────────────────┴─────────────────▶│  (StatefulSet)│                 │
-│  │ StatefulSet│                                             │  exchange     │                │
-│  │ + PVC      │                                             │  "sa.events" │                │
-│  │ (headless  │                                             │  durable      │                │
-│  │  service)  │                                             └──────┬───────┘                │
-│  └────────────┘   NetPol: allow-broker-clients-*                  │ ack manual              │
-│        ▲           (solo cron-jobs/notifications/orders→rabbitmq) ▼ tras persistir           │
-│        │                                                   ┌──────────────────┐             │
-│        │                                                   │ notifications-   │             │
-│        └───────────────────────────────────────────────────│ service :4004    │             │
-│                                                              │ (consumidor RMQ) │             │
-│                                                              └──────────────────┘             │
-│                                                                                                │
-│   ┌───────────────────────────┐                                                              │
-│   │ cron-jobs (NestJS         │──sync──▶ Postgres (p5_cron_db): heartbeat cada 2'             │
-│   │ standalone, 2 CronJobs)   │──sync──▶ Postgres (lee) cada 10' ──async──▶ RabbitMQ           │
-│   └───────────────────────────┘         "cron.summary" ──▶ notifications-service ──▶ Postgres │
-│                                                                                                │
-│   default-deny-all: política base — TODO el tráfico pod↔pod está denegado salvo que exista    │
-│   un allow-* explícito arriba. allow-dns-egress permite resolución DNS a todos (necesaria      │
-│   para que cualquier pod pueda resolver nombres de Service).                                   │
-└────────────────────────────────────────────────────────────────────────────────────────────┘
+![alt text](mermaid-diagram-1787961534600.png)
 
-Leyenda: ──▶ síncrono (espera respuesta)   ··▶/async = asíncrono (publica y retorna de inmediato)
-```
+`default-deny-all` es la política base: **todo** tráfico pod↔pod está
+denegado salvo que exista un `allow-*` explícito (los que anotan cada flecha
+arriba). `allow-dns-egress` es la única excepción global (resolución DNS
+para todos los pods).
 
-### 1.2 Diagrama Mermaid (equivalente, para visores que lo soporten)
+### 1.2 Flujo síncrono — ejemplo real: crear una orden validando stock
 
 ```mermaid
-flowchart TB
-    USER["Usuario / cliente HTTP<br/>(fuera del clúster)"]
+sequenceDiagram
+    participant C as Cliente
+    participant I as Ingress
+    participant G as gateway
+    participant O as orders-service
+    participant P as products-service
+    participant DB as Postgres
 
-    subgraph CLUSTER["Clúster Kubernetes — namespace sa-p5"]
-        ING["Ingress nginx<br/>(único punto de entrada)"]
-
-        subgraph EDGE["Zona edge<br/>NetPol: allow-ingress-to-edge"]
-            GW["gateway :8080"]
-            FE["frontend :3000"]
-        end
-
-        subgraph SVC["Microservicios<br/>NetPol: allow-gateway-to-services"]
-            AUTH["auth-service :4000"]
-            AUTHZ["authorization-service :4001"]
-            PROD["products-service :4002"]
-            ORD["orders-service :4003"]
-        end
-
-        NOTIF["notifications-service :4004<br/>(consumidor RMQ, ack manual)"]
-        CRON["cron-jobs<br/>(heartbeat 2' / summary 10')"]
-
-        subgraph DATA["Datos<br/>NetPol: allow-db-clients-* / allow-broker-clients-*"]
-            PG[("Postgres<br/>StatefulSet + PVC")]
-            MQ[("RabbitMQ<br/>exchange sa.events, durable")]
-        end
-    end
-
-    USER -->|HTTP| ING
-    ING -->|"/api /products/graphql<br/>/orders/graphql /health /docs"| GW
-    ING -->|"/"| FE
-    FE -.->|llamadas del navegador| GW
-    GW --> AUTH
-    GW --> AUTHZ
-    GW --> PROD
-    GW --> ORD
-    AUTH --> AUTHZ
-    ORD -->|sync GraphQL| PROD
-    ORD -.->|"async: publica order.created<br/>(retorna de inmediato)"| MQ
-    MQ -.->|"async: consume + ack manual"| NOTIF
-    CRON --> PG
-    CRON -.->|async: publica cron.summary| MQ
-    MQ -.-> NOTIF
-    AUTH --> PG
-    ORD --> PG
-    PROD --> PG
-    NOTIF --> PG
-    NOTIF --> MQ
-    ORD --> MQ
-    CRON --> MQ
+    C->>I: POST /api/orders
+    I->>G: proxy (path /api/orders)
+    G->>O: POST /orders
+    O->>P: GraphQL query stock (SÍNCRONO, espera respuesta)
+    P->>DB: SELECT stock
+    DB-->>P: stock disponible
+    P-->>O: stock OK
+    O->>DB: INSERT order
+    O-->>G: 201 Created
+    G-->>I: 201
+    I-->>C: 201 Created
 ```
 
-### 1.3 Qué acota cada NetworkPolicy (15 objetos activos)
+Cada flecha de esta cadena **bloquea** a la anterior hasta recibir
+respuesta — si `products-service` tardara o fallara, `orders-service`
+tampoco podría responder al cliente.
+
+### 1.3 Flujo asíncrono — ejemplo real: notificación tras crear la orden
+
+```mermaid
+sequenceDiagram
+    participant O as orders-service
+    participant MQ as RabbitMQ (sa.events)
+    participant N as notifications-service
+    participant DB as Postgres (p5_notifications_db)
+
+    O->>MQ: publish order.created (exchange durable)
+    Note over O,MQ: orders-service NO espera al consumidor
+    O-->>O: responde 201 al cliente inmediatamente
+    par procesamiento independiente y desacoplado
+        MQ->>N: entrega el mensaje
+        N->>DB: INSERT notification
+        N-->>MQ: ack manual (SOLO tras persistir con éxito)
+    end
+    Note over MQ,N: si notifications-service está caído, el mensaje<br/>queda en la cola durable — no se pierde
+```
+
+### 1.4 Límites impuestos por las NetworkPolicies (ejemplo verificado en vivo)
+
+```mermaid
+flowchart LR
+    subgraph NS["namespace sa-p5 — default-deny-all activo"]
+        ATTACKER["pod sin labels del chart<br/>(netpol-attacker)"]
+        GWpod["gateway<br/>label autorizado"]
+        PGpod[("Postgres")]
+        MQpod[("RabbitMQ")]
+        PRODpod["products-service"]
+    end
+
+    ATTACKER -.->|"❌ bloqueado — timeout 5s<br/>sin allow-* que lo cubra"| PGpod
+    ATTACKER -.->|"❌ bloqueado — timeout 5s"| MQpod
+    ATTACKER -.->|"❌ bloqueado — timeout 5s"| PRODpod
+    GWpod ==>|"✅ permitido<br/>allow-gateway-to-services"| PRODpod
+```
+
+Verificado en la sección 4.4: desde un pod sin los labels del chart, las
+tres conexiones (Postgres, RabbitMQ, products-service) agotan el timeout;
+desde `gateway` (label autorizado), la misma conexión a products-service
+responde `200 ok` de inmediato.
+
+### 1.5 Qué acota cada NetworkPolicy (15 objetos activos)
 
 | Política | Efecto |
 |---|---|
