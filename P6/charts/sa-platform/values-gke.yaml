@@ -1,0 +1,56 @@
+# Perfil para GKE Standard. Los repositorios de imagen se inyectan desde
+# scripts/deploy.sh y las credenciales desde values-secrets.yaml (ignorado).
+namespace:
+  name: sa-p6
+
+postgresql:
+  primary:
+    persistence:
+      enabled: true
+      storageClass: standard-rwo
+      size: 10Gi
+
+rabbitmq:
+  persistence:
+    enabled: true
+    storageClass: standard-rwo
+    size: 10Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ""
+
+networkPolicy:
+  enabled: true
+  dnsServiceCIDR: "34.118.224.10/32"
+
+# Dos replicas permiten distribuir cargas entre los dos nodos sin sobredimensionar
+# una practica temporal. El HPA puede crecer hasta cuatro replicas.
+authService: &cloudService
+  replicaCount: 2
+  image:
+    pullPolicy: IfNotPresent
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+authorizationService: *cloudService
+productsService: *cloudService
+ordersService: *cloudService
+notificationsService: *cloudService
+gateway: *cloudService
+frontend: *cloudService
+
+cronJobs:
+  image:
+    pullPolicy: IfNotPresent
+
+resourceQuota:
+  enabled: true
+  requestsCpu: "6"
+  requestsMemory: 8Gi
+  limitsCpu: "12"
+  limitsMemory: 12Gi
+  pods: "60"

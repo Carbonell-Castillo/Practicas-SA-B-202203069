@@ -1,0 +1,38 @@
+{{/*
+Script de inicialización multi-DB para el subchart bitnami/postgresql,
+adaptado de P4/infra/postgres/init-multi-db.sh: la imagen de Postgres ya crea
+automáticamente la base "postgresql.auth.database" (POSTGRES_DB, usada por
+auth-service); este script crea las 4 bases lógicas restantes en la MISMA
+instancia, cada una propiedad del mismo usuario de aplicación (aislamiento
+lógico por base de datos, un microservicio nunca toca la base de otro).
+Se referencia por NOMBRE FIJO desde values.yaml
+(postgresql.primary.initdb.scriptsConfigMap: sa-platform-postgres-initdb) —
+por eso este chart asume que el release se llama siempre "sa-platform".
+*/}}
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sa-platform-postgres-initdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/part-of: sa-platform
+data:
+  init-multi-db.sh: |
+    #!/bin/bash
+    # OJO: la imagen bitnami/postgresql (a diferencia de la imagen oficial
+    # "postgres" que usaba P4) NO expone $POSTGRES_DB/$POSTGRES_USER a los
+    # scripts de /docker-entrypoint-initdb.d — expone $POSTGRESQL_DATABASE y
+    # $POSTGRESQL_USERNAME. Este script corre con `set -u` heredado del
+    # entrypoint, así que referenciar la variable equivocada aborta el
+    # arranque completo del pod (visto en vivo: "POSTGRES_DB: unbound
+    # variable").
+    set -e
+    export PGPASSWORD="$POSTGRESQL_PASSWORD"
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRESQL_USERNAME" --dbname "$POSTGRESQL_DATABASE" <<-EOSQL
+        CREATE DATABASE p4_products_db OWNER {{ .Values.postgresql.auth.username }};
+        CREATE DATABASE p4_orders_db OWNER {{ .Values.postgresql.auth.username }};
+        CREATE DATABASE p5_notifications_db OWNER {{ .Values.postgresql.auth.username }};
+        CREATE DATABASE p5_cron_db OWNER {{ .Values.postgresql.auth.username }};
+    EOSQL
+{{- end }}

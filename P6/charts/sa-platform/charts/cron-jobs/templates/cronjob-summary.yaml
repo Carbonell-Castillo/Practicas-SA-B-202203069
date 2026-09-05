@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "sa-common.fullname" . }}-summary
+  labels:
+    {{- include "sa-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: summary
+spec:
+  schedule: {{ required "summary.schedule is required" .Values.summary.schedule | quote }}
+  timeZone: {{ .Values.summary.timeZone | quote }}
+  concurrencyPolicy: {{ .Values.summary.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.summary.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.summary.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.summary.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.summary.activeDeadlineSeconds }}
+      template:
+        metadata:
+          labels:
+            {{- include "sa-common.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: summary
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ include "sa-common.serviceAccountName" . }}
+          automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: cron-summary
+              image: "{{ required "image.repository is required" .Values.image.repository }}:{{ default $.Chart.AppVersion .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+              args: ["summary"]
+              securityContext:
+                {{- toYaml .Values.containerSecurityContext | nindent 16 }}
+              envFrom:
+                - configMapRef:
+                    name: {{ include "sa-common.fullname" . }}
+                - secretRef:
+                    name: {{ include "sa-common.fullname" . }}
+              {{- if .Values.extraEnv }}
+              env:
+                {{- range .Values.extraEnv }}
+                - name: {{ .name | quote }}
+                  value: {{ .value | quote }}
+                {{- end }}
+              {{- end }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}

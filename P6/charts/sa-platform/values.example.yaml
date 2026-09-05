@@ -1,0 +1,51 @@
+# Plantilla de credenciales — TODOS los valores son FICTICIOS.
+#
+# Copiar este archivo a "values-secrets.yaml" (mismo directorio), reemplazar
+# cada valor por uno real/generado, y pasarlo como -f adicional en
+# `helm install`/`helm upgrade`. "values-secrets.yaml" está en .gitignore:
+# nunca debe terminar en el repositorio (sección B de Make.md — "Ninguna
+# credencial podrá estar escrita en el repositorio").
+#
+# Generar valores aleatorios razonables, por ejemplo:
+#   openssl rand -hex 32   # para JWT_SECRET, contraseñas, etc.
+#   openssl rand -base64 32   # para AES_KEY
+
+postgresql:
+  auth:
+    postgresPassword: "CHANGE_ME_postgres_admin_password"
+    password: "CHANGE_ME_p5_user_password"
+
+rabbitmq:
+  auth:
+    password: "CHANGE_ME_rabbitmq_password"
+
+# Nota: las URLs de abajo deben usar la MISMA contraseña que
+# postgresql.auth.password / rabbitmq.auth.password de arriba — Helm no las
+# compone automáticamente porque cada Secret de aplicación se declara por
+# separado (patrón deliberado: cada microservicio solo ve su propia URL de
+# conexión, nunca la contraseña "admin" de Postgres).
+
+authService:
+  secret:
+    DATABASE_URL: "postgresql://p5_user:CHANGE_ME_p5_user_password@postgres:5432/p4_auth_db?schema=public"
+    JWT_SECRET: "CHANGE_ME_jwt_secret_64_hex_chars"
+    AES_KEY: "CHANGE_ME_aes_key_32_bytes_base64"
+
+productsService:
+  secret:
+    DATABASE_URL: "postgresql+psycopg2://p5_user:CHANGE_ME_p5_user_password@postgres:5432/p4_products_db"
+
+ordersService:
+  secret:
+    DATABASE_URL: "postgresql://p5_user:CHANGE_ME_p5_user_password@postgres:5432/p4_orders_db?schema=public"
+    RABBITMQ_URL: "amqp://p5_user:CHANGE_ME_rabbitmq_password@rabbitmq:5672/"
+
+notificationsService:
+  secret:
+    DATABASE_URL: "postgresql://p5_user:CHANGE_ME_p5_user_password@postgres:5432/p5_notifications_db?schema=public"
+    RABBITMQ_URL: "amqp://p5_user:CHANGE_ME_rabbitmq_password@rabbitmq:5672/"
+
+cronJobs:
+  secret:
+    DATABASE_URL: "postgresql://p5_user:CHANGE_ME_p5_user_password@postgres:5432/p5_cron_db?schema=public"
+    RABBITMQ_URL: "amqp://p5_user:CHANGE_ME_rabbitmq_password@rabbitmq:5672/"

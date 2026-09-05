@@ -1,0 +1,14 @@
+apiVersion: v2
+name: rabbitmq
+description: >-
+  RabbitMQ como StatefulSet con PVC (broker durable), imagen oficial
+  rabbitmq:*-management-alpine. Reemplaza a bitnami/rabbitmq: sus imágenes
+  dejaron de estar disponibles gratis en Docker Hub (repo pasó a "commercial
+  subscription only"), aunque el CHART seguía resolviendo bien — el pull de
+  la imagen del pod fallaba con ErrImagePull. Se mantiene igualmente como
+  "dependencia declarada en Chart.yaml, resuelta con helm dependency update"
+  (sección A de Make.md), solo que vía repositorio local (file://) en vez de
+  un repo remoto, ya que postgresql (bitnami) sí sigue funcionando gratis.
+type: application
+version: 0.1.0
+appVersion: "4.1"

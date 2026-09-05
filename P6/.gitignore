@@ -1,0 +1,17 @@
+# Archivos generados con credenciales o datos de una cuenta concreta
+charts/sa-platform/values-secrets.yaml
+charts/sa-platform/values-deploy.yaml
+.env
+config.env
+evidence/*.log
+evidence/*.json
+
+# Dependencias regenerables de Helm
+charts/sa-platform/Chart.lock
+charts/sa-platform/charts/*.tgz
+charts/sa-platform/charts/postgresql/
+
+# Archivos locales
+.idea/
+.vscode/
+*.tmp

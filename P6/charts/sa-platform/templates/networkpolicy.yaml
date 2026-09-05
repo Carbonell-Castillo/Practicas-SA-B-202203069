@@ -1,0 +1,314 @@
+{{/*
+Aislamiento de red (sección E de Make.md): por defecto se deniega TODO el
+tráfico lateral dentro de sa-p5; solo se permite explícitamente lo que la
+arquitectura necesita:
+  - Ingress controller  -> gateway, frontend (entrada externa)
+  - gateway              -> cada microservicio (auth/authorization/products/orders)
+  - auth-service          -> authorization-service (validación de rol/ruta)
+  - orders-service        -> products-service (GraphQL, precio/stock)
+  - servicios con DB      -> postgres
+  - servicios con broker  -> rabbitmq
+  - todo pod              -> kube-dns (si no, ninguna resolución de nombres funciona)
+Nada más puede alcanzar a nada más: un pod no autorizado que intente golpear
+directamente a postgres/rabbitmq/un microservicio es rechazado por el CNI
+(se requiere Calico u otro CNI que aplique NetworkPolicy — kindnetd no lo
+hace, ver infra/kind/kind-config.yaml).
+*/}}
+{{- if .Values.networkPolicy.enabled }}
+---
+# 1) Default deny-all (ingress Y egress) para todo pod del namespace.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+---
+# 2) DNS: todo pod puede resolver nombres vía kube-dns (kube-system), si no
+#    ninguna de las reglas de abajo funciona (dependen de resolver Service
+#    names).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector: {}
+        {{- with .Values.networkPolicy.dnsServiceCIDR }}
+        - ipBlock:
+            cidr: {{ . | quote }}
+        {{- end }}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# 3) Ingress controller -> gateway y frontend (única puerta de entrada).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-edge
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: sa-platform/component
+        operator: In
+        values: ["gateway", "frontend"]
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+---
+# 4) frontend -> gateway (el frontend solo habla con el gateway, nunca
+#    directo con un microservicio, igual que en P4).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-to-gateway
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      sa-platform/component: gateway
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              sa-platform/component: frontend
+---
+# 5) gateway -> cada microservicio HTTP (nunca al revés).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-services
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: sa-platform/component
+        operator: In
+        values: ["auth-service", "authorization-service", "products-service", "orders-service"]
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              sa-platform/component: gateway
+---
+# 6) auth-service -> authorization-service (validación de rol/ruta, sección
+#    B/G de P4).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-auth-to-authorization
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      sa-platform/component: authorization-service
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              sa-platform/component: auth-service
+---
+# 7) orders-service -> products-service (GraphQL: precio/stock).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-orders-to-products
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      sa-platform/component: products-service
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              sa-platform/component: orders-service
+---
+# 8) Solo los servicios/cronjobs con base de datos propia pueden alcanzar a
+#    Postgres (auth, products, orders, notifications, cron-jobs). Ni
+#    authorization-service, ni gateway, ni frontend tienen motivo para
+#    llegar a Postgres.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-db-clients-to-postgres
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: sa-platform/component
+                operator: In
+                values:
+                  - auth-service
+                  - products-service
+                  - orders-service
+                  - notifications-service
+                  - cron-jobs
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+# 9) Solo orders-service, notifications-service y cron-jobs (modo summary)
+#    hablan con RabbitMQ.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-broker-clients-to-rabbitmq
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: rabbitmq
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: sa-platform/component
+                operator: In
+                values:
+                  - orders-service
+                  - notifications-service
+                  - cron-jobs
+      ports:
+        - protocol: TCP
+          port: 5672
+
+{{/*
+Egress: cada componente que necesita salir hacia otro componente también
+necesita su regla de EGRESS explícita (el deny-all por defecto bloquea en
+ambas direcciones). Se listan por separado para que cada NetworkPolicy de
+egress quede junto a su "razón de negocio" documentada arriba en ingress.
+*/}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-egress-to-gateway
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      sa-platform/component: frontend
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              sa-platform/component: gateway
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-egress-to-services
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      sa-platform/component: gateway
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchExpressions:
+              - key: sa-platform/component
+                operator: In
+                values: ["auth-service", "authorization-service", "products-service", "orders-service"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-auth-egress-to-authorization
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      sa-platform/component: auth-service
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              sa-platform/component: authorization-service
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-orders-egress-to-products
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      sa-platform/component: orders-service
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              sa-platform/component: products-service
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-db-clients-egress-to-postgres
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: sa-platform/component
+        operator: In
+        values: ["auth-service", "products-service", "orders-service", "notifications-service", "cron-jobs"]
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-broker-clients-egress-to-rabbitmq
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: sa-platform/component
+        operator: In
+        values: ["orders-service", "notifications-service", "cron-jobs"]
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: rabbitmq
+      ports:
+        - protocol: TCP
+          port: 5672
+{{- end }}

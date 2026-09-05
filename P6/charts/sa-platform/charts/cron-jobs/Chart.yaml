@@ -1,0 +1,10 @@
+apiVersion: v2
+name: cron-jobs
+description: Cronjob 1 (heartbeat, cada 2 min) y Cronjob 2 (summary, cada 10 min) — misma imagen NestJS
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+dependencies:
+  - name: sa-common
+    version: 0.1.0
+    repository: "file://../sa-common"
