@@ -61,7 +61,7 @@ Una matriz independiente construye los ocho Dockerfiles con Buildx. No publica e
 
 Después de todas las matrices, el job crea `sa-p7-ci`, reconstruye exactamente el mismo commit, etiqueta las imágenes como `sa-p7/<servicio>:<SHA>` y usa `kind load docker-image`. El perfil `values-kind.yaml` fija `pullPolicy: Never`, una réplica, persistencia desactivada y recursos pequeños.
 
-Los secretos para Postgres, RabbitMQ, JWT y AES se generan aleatoriamente dentro de `$RUNNER_TEMP`; nunca se escriben en Git. Helm usa `--atomic --wait`: ante un fallo revierte el release. Finalmente se exige que los siete deployments existan y que los nueve pods esperados (siete aplicaciones, Postgres y RabbitMQ) estén `Running/Ready`.
+Los secretos para Postgres, RabbitMQ, JWT y AES se generan aleatoriamente dentro de `$RUNNER_TEMP`; nunca se escriben en Git. Para evitar saturar el runner, Helm inicia primero Postgres y RabbitMQ y después despliega las aplicaciones. En CI se conservan los recursos hasta terminar el job si Helm falla, permitiendo imprimir pods, eventos y logs; Kind desaparece con el runner. Finalmente se exige que los siete deployments existan y que los nueve pods esperados (siete aplicaciones, Postgres y RabbitMQ) estén `Running/Ready`.
 
 ## Archivos
 

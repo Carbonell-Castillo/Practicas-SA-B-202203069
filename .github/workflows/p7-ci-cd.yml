@@ -170,7 +170,23 @@ jobs:
           HELM_VALUES_FILE: P7/charts/sa-platform/values-kind.yaml
           HELM_SECRETS_FILE: ${{ runner.temp }}/values-secrets.yaml
           NAMESPACE: sa-p7
+          PHASED_DEPLOY: "true"
+          HELM_ATOMIC: "false"
+          HELM_TIMEOUT: 15m
         run: bash P7/scripts/deploy.sh
+      - name: Diagnóstico si Helm falla
+        if: failure()
+        run: |
+          kubectl get pods,deployments,statefulsets,jobs -n sa-p7 -o wide || true
+          kubectl get events -n sa-p7 --sort-by=.lastTimestamp || true
+          for pod in $(kubectl get pods -n sa-p7 -o name 2>/dev/null); do
+            echo "::group::Describe ${pod}"
+            kubectl describe -n sa-p7 "${pod}" || true
+            echo "::endgroup::"
+            echo "::group::Logs ${pod}"
+            kubectl logs -n sa-p7 "${pod}" --all-containers --tail=150 || true
+            echo "::endgroup::"
+          done
       - name: Prueba de humo del clúster
         run: |
           kubectl wait --for=condition=Available deployment --all -n sa-p7 --timeout=300s

@@ -1,0 +1,9 @@
+# Primera fase del CD: arranca las dependencias antes que las aplicaciones.
+authService: {enabled: false}
+authorizationService: {enabled: false}
+productsService: {enabled: false}
+ordersService: {enabled: false}
+notificationsService: {enabled: false}
+gateway: {enabled: false}
+frontend: {enabled: false}
+cronJobs: {enabled: false}
