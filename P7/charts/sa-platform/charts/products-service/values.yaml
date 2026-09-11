@@ -1,0 +1,82 @@
+componentLabel: products-service
+
+replicaCount: 2
+
+image:
+  repository: sa-platform/products-service
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  port: 4002
+  targetPort: 4002
+
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: true
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 300m
+    memory: 256Mi
+
+probes:
+  startup:
+    path: /health
+    periodSeconds: 3
+    failureThreshold: 15
+  liveness:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+updateStrategy:
+  maxUnavailable: 0
+  maxSurge: 1
+
+config:
+  PORT: "4002"
+  LOG_LEVEL: "info"
+
+secret:
+  DATABASE_URL: ""
+
+extraEnv: []
+extraVolumes: []
+extraVolumeMounts: []

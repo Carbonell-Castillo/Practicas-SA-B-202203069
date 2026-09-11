@@ -1,0 +1,33 @@
+{{- if .Values.serviceAccount.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "sa-common.fullname" . }}
+  labels:
+    {{- include "sa-common.labels" . | nindent 4 }}
+rules:
+  # Mínimo privilegio: el pod solo puede leer su propio ConfigMap/Secret (por
+  # nombre), nada más de la API de Kubernetes. No ejerce este permiso en
+  # tiempo normal de ejecución — existe para cumplir "RBAC de mínimo
+  # privilegio, sin ServiceAccount default" (sección G de Make.md) de forma
+  # verificable y auditable, no porque el proceso llame a la API.
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    resourceNames: [{{ include "sa-common.fullname" . | quote }}]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "sa-common.fullname" . }}
+  labels:
+    {{- include "sa-common.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "sa-common.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "sa-common.fullname" . }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

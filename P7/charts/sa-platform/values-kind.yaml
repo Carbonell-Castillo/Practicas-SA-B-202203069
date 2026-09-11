@@ -1,0 +1,50 @@
+# Perfil exclusivo del clúster efímero creado por GitHub Actions.
+namespace:
+  name: sa-p7
+
+postgresql:
+  primary:
+    persistence:
+      enabled: false
+    resources:
+      requests: {cpu: 50m, memory: 96Mi}
+      limits: {cpu: 300m, memory: 384Mi}
+
+rabbitmq:
+  persistence:
+    enabled: false
+  resources:
+    requests: {cpu: 50m, memory: 96Mi}
+    limits: {cpu: 300m, memory: 384Mi}
+
+authService: &kindService
+  replicaCount: 1
+  image:
+    pullPolicy: Never
+  hpa:
+    enabled: false
+  pdb:
+    enabled: false
+  resources:
+    requests: {cpu: 25m, memory: 64Mi}
+    limits: {cpu: 250m, memory: 256Mi}
+authorizationService: *kindService
+productsService: *kindService
+ordersService: *kindService
+notificationsService: *kindService
+gateway: *kindService
+frontend: *kindService
+
+cronJobs:
+  image:
+    pullPolicy: Never
+  resources:
+    requests: {cpu: 10m, memory: 32Mi}
+    limits: {cpu: 100m, memory: 128Mi}
+
+ingress:
+  enabled: false
+networkPolicy:
+  enabled: false
+resourceQuota:
+  enabled: false

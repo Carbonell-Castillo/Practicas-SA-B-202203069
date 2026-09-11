@@ -1,0 +1,177 @@
+# sa-platform — values BASE. No contiene secretos (todas las claves
+# sensibles quedan como "" aquí, ver values.example.yaml). Se combina con
+# values-dev.yaml o values-prod.yaml y con un values-secrets.yaml NO
+# versionado (copiar values.example.yaml como plantilla), pasados con -f
+# adicionales en `helm install/upgrade`.
+#
+# Este chart asume que el release siempre se instala con el nombre
+# "sa-platform" (ver README) — por eso cada subchart fija su propio
+# `fullnameOverride` aquí abajo a un nombre corto y estable (coincide con los
+# nombres de servicio usados en P4/docker-compose.yml), en vez de depender
+# del nombre "<release>-<chart>" que generaría sa-common.fullname por defecto.
+
+namespace:
+  name: sa-p5
+
+# --- Infraestructura declarada como dependencia (sección A) ---
+
+postgresql:
+  enabled: true
+  fullnameOverride: postgres
+  architecture: standalone
+  # El chart bitnami/postgresql fija por defecto un tag versionado
+  # (17.4.0-debian-12-r19) que Bitnami ya retiró del free tier de Docker Hub
+  # (solo dejan "latest" disponible gratis, ver Chart.yaml comentario sobre
+  # rabbitmq para el mismo fenómeno). Se sobreescribe a "latest" para que el
+  # pod pueda hacer el pull.
+  image:
+    tag: latest
+  auth:
+    username: p5_user
+    password: ""
+    postgresPassword: ""
+    database: p4_auth_db
+  primary:
+    initdb:
+      scriptsConfigMap: sa-platform-postgres-initdb
+    persistence:
+      enabled: true
+      size: 1Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    # NetworkPolicies propias del chart padre (templates/networkpolicy.yaml)
+    # cubren el aislamiento; se desactiva la del subchart bitnami (nótese que
+    # en este chart la clave vive bajo `primary.`, NO en la raíz — la del
+    # subchart, si se dejara habilitada, permite CUALQUIER origen en el
+    # puerto 5432 y pisaría el aislamiento de nuestras propias policies).
+    networkPolicy:
+      enabled: false
+
+rabbitmq:
+  enabled: true
+  fullnameOverride: rabbitmq
+  # El tag versionado que fija bitnami/rabbitmq por defecto
+  # (bitnami/rabbitmq:4.1.3-debian-12-r1) ya no es descargable gratis desde
+  # Docker Hub (mismo fenómeno que postgresql, arriba) — se cambia a la
+  # imagen oficial de la comunidad (no-Bitnami), que respeta las mismas
+  # variables de entorno (RABBITMQ_DEFAULT_VHOST, etc.) que usa este chart.
+  image:
+    registry: docker.io
+    repository: rabbitmq
+    tag: 4-management-alpine
+  # `rabbitmq-diagnostics` (usado por las 3 probes) puede tardar más que el
+  # default de Kubernetes (1s) en responder mientras el nodo Erlang termina
+  # de arrancar — con el default el pod entraba en CrashLoopBackOff antes de
+  # llegar a estar listo.
+  startupProbe:
+    enabled: true
+    timeoutSeconds: 10
+    periodSeconds: 5
+    failureThreshold: 30
+  livenessProbe:
+    timeoutSeconds: 10
+  readinessProbe:
+    timeoutSeconds: 10
+  auth:
+    username: p5_user
+    password: ""
+  persistence:
+    enabled: true
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# --- Microservicios (subcharts locales, alias camelCase, sección A) ---
+
+authService:
+  enabled: true
+  fullnameOverride: auth-service
+  secret:
+    DATABASE_URL: ""
+    JWT_SECRET: ""
+    AES_KEY: ""
+
+authorizationService:
+  enabled: true
+  fullnameOverride: authorization-service
+
+productsService:
+  enabled: true
+  fullnameOverride: products-service
+  secret:
+    DATABASE_URL: ""
+
+ordersService:
+  enabled: true
+  fullnameOverride: orders-service
+  secret:
+    DATABASE_URL: ""
+    RABBITMQ_URL: ""
+
+notificationsService:
+  enabled: true
+  fullnameOverride: notifications-service
+  secret:
+    DATABASE_URL: ""
+    RABBITMQ_URL: ""
+
+gateway:
+  enabled: true
+  fullnameOverride: gateway
+
+frontend:
+  enabled: true
+  fullnameOverride: frontend
+
+cronJobs:
+  enabled: true
+  fullnameOverride: cron-jobs
+  secret:
+    DATABASE_URL: ""
+    RABBITMQ_URL: ""
+
+# --- Namespace-wide (sección F) ---
+
+resourceQuota:
+  enabled: true
+  requestsCpu: "6"
+  requestsMemory: 6Gi
+  # Con los 6 servicios web escalados a maxReplicas=5 (300m límite c/u en
+  # dev) más Postgres/RabbitMQ, el pico teórico ronda ~10 cores — se deja
+  # margen para que la prueba de carga (k6, sección I) demuestre el
+  # escalado real por CPU sin que la ResourceQuota se convierta en un techo
+  # artificial que confunda la evidencia del HPA.
+  limitsCpu: "12"
+  limitsMemory: 10Gi
+  pods: "60"
+
+limitRange:
+  enabled: true
+  defaultRequestCpu: 100m
+  defaultRequestMemory: 128Mi
+  defaultLimitCpu: 250m
+  defaultLimitMemory: 256Mi
+
+# --- Ingress: único punto de entrada (sección E) ---
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ""
+  annotations: {}
+
+# --- NetworkPolicies de aislamiento (sección E) ---
+
+networkPolicy:
+  enabled: true
+  dnsServiceCIDR: ""

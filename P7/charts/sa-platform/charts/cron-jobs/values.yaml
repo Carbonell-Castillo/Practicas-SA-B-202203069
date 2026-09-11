@@ -1,0 +1,63 @@
+componentLabel: cron-jobs
+
+image:
+  repository: sa-platform/cron-jobs
+  tag: ""
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: true
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# Cronjob 1: cada 2 minutos, GMT-6 nativo vía spec.timeZone (America/Guatemala, sin DST).
+heartbeat:
+  schedule: "*/2 * * * *"
+  timeZone: "America/Guatemala"
+  concurrencyPolicy: Forbid
+  backoffLimit: 3
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  activeDeadlineSeconds: 90
+
+# Cronjob 2: cada 10 minutos, agrupa por hora y publica el resumen en RabbitMQ.
+summary:
+  schedule: "*/10 * * * *"
+  timeZone: "America/Guatemala"
+  concurrencyPolicy: Forbid
+  backoffLimit: 3
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  activeDeadlineSeconds: 180
+
+config:
+  LOG_LEVEL: "log"
+  STUDENT_CARNET: "202203069"
+
+secret:
+  DATABASE_URL: ""
+  RABBITMQ_URL: ""
+
+extraEnv: []

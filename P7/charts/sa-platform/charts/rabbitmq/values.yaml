@@ -1,0 +1,37 @@
+fullnameOverride: rabbitmq
+
+image:
+  repository: rabbitmq
+  tag: 4-management-alpine
+  pullPolicy: IfNotPresent
+
+auth:
+  username: sa_p5_user
+  password: ""
+
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 999
+  runAsGroup: 999
+  fsGroup: 999
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop: ["ALL"]

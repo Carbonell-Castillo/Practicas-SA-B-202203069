@@ -1,0 +1,45 @@
+# sa-platform — perfil DEV: recursos mínimos para correr todo en un clúster
+# local (kind/Docker Desktop), tag de imagen mutable "dev" (se reconstruye
+# seguido), log verboso para depurar, y el piso de HPA en el mínimo permitido
+# (2) para no acaparar CPU del laptop mientras aún se demuestra el máximo (5)
+# bajo carga real con k6 (ver k6/load-test.js).
+#
+# Uso: helm install sa-platform charts/sa-platform -n sa-p5 --create-namespace \
+#        -f charts/sa-platform/values-dev.yaml -f values-secrets.yaml
+
+authService: &devWebService
+  image:
+    tag: dev
+  config:
+    LOG_LEVEL: debug
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      cpu: 400m
+      memory: 224Mi
+  hpa:
+    minReplicas: 3
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+authorizationService: *devWebService
+productsService: *devWebService
+ordersService: *devWebService
+notificationsService: *devWebService
+gateway: *devWebService
+frontend: *devWebService
+
+cronJobs:
+  image:
+    tag: dev
+  config:
+    LOG_LEVEL: debug
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 150m
+      memory: 128Mi

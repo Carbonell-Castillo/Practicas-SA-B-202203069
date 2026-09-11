@@ -1,0 +1,44 @@
+# sa-platform — perfil PROD: imagen fijada a un tag semántico inmutable
+# (nunca "latest"/"dev"), más recursos por réplica, log solo de advertencias
+# en adelante, y un piso de HPA más alto (3) para tolerar la caída de un pod
+# sin quedarse con una sola réplica activa.
+#
+# Uso: helm install sa-platform charts/sa-platform -n sa-p5 --create-namespace \
+#        -f charts/sa-platform/values-prod.yaml -f values-secrets.yaml
+
+authService: &prodWebService
+  image:
+    tag: "1.0.0"
+  config:
+    LOG_LEVEL: warn
+  resources:
+    requests:
+      cpu: 150m
+      memory: 192Mi
+    limits:
+      cpu: 750m
+      memory: 384Mi
+  hpa:
+    minReplicas: 3
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+authorizationService: *prodWebService
+productsService: *prodWebService
+ordersService: *prodWebService
+notificationsService: *prodWebService
+gateway: *prodWebService
+frontend: *prodWebService
+
+cronJobs:
+  image:
+    tag: "1.0.0"
+  config:
+    LOG_LEVEL: warn
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      cpu: 250m
+      memory: 192Mi

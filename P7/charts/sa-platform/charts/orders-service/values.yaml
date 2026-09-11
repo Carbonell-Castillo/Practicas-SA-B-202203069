@@ -1,0 +1,89 @@
+# Valores por defecto de orders-service. values-dev.yaml/values-prod.yaml del
+# chart padre sobreescriben replicaCount, resources, image.tag y config.LOG_LEVEL
+# vía el bloque `ordersService:` (ver charts/sa-platform/values*.yaml).
+componentLabel: orders-service
+
+replicaCount: 2
+
+image:
+  repository: sa-platform/orders-service
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 4003
+
+serviceAccount:
+  create: true
+  name: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+extraVolumes:
+  - name: tmp
+    emptyDir: {}
+extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+probes:
+  path: /api/health
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+  startup:
+    periodSeconds: 2
+    failureThreshold: 30
+
+# Variables NO sensibles -> ConfigMap (sección B de Make.md).
+config:
+  PORT: "4003"
+  PRODUCTS_SERVICE_URL: "http://products-service:4002/graphql"
+  LOG_LEVEL: "info"
+
+# Variables sensibles -> Secret, inyectadas con envFrom (sección B). Deben
+# proveerse en values-secrets.yaml (no versionado); ver values.example.yaml
+# a nivel del chart padre para el formato esperado.
+secret:
+  DATABASE_URL: ""
+  RABBITMQ_URL: ""
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+rollingUpdate:
+  maxUnavailable: 0
+  maxSurge: 1
+
+nodeSelector: {}
+tolerations: []
+podAnnotations: {}

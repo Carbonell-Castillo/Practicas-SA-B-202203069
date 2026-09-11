@@ -1,0 +1,5 @@
+apiVersion: v2
+name: sa-common
+description: Named templates compartidos (labels, nombres, checksums, RBAC) para todos los subcharts de sa-platform (Práctica 5)
+type: library
+version: 0.1.0

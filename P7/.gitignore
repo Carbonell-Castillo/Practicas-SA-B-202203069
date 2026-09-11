@@ -1,0 +1,10 @@
+charts/sa-platform/values-secrets.yaml
+charts/sa-platform/values-deploy.yaml
+charts/sa-platform/Chart.lock
+charts/sa-platform/charts/*.tgz
+charts/sa-platform/charts/*/Chart.lock
+charts/sa-platform/charts/*/charts/*.tgz
+charts/sa-platform/charts/postgresql/
+.venv-ci/
+gha-creds-*.json
+evidence/*.log

@@ -1,0 +1,189 @@
+name: P7 CI/CD · Kind efímero
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ["P5/apps/**", "P7/**", ".github/workflows/p7-ci-cd.yml"]
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths: ["P5/apps/**", "P7/**", ".github/workflows/p7-ci-cd.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p7-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  version:
+    name: 0 · Preparación y versión
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.version.outputs.image_tag }}
+    steps:
+      - id: version
+        name: Calcular versión inmutable
+        run: echo "image_tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+  build-node:
+    name: 1 · Build Node · ${{ matrix.service }}
+    needs: version
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-service
+          - authorization-service
+          - orders-service
+          - notifications-service
+          - gateway
+          - frontend
+          - cron-jobs
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: P5/apps/${{ matrix.service }}/package-lock.json
+      - run: bash P7/scripts/build-service.sh "${{ matrix.service }}"
+
+  build-python:
+    name: 1 · Build Python · products-service
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: P5/apps/products-service/requirements.txt
+      - run: bash P7/scripts/build-service.sh products-service
+
+  test:
+    name: 2 · Test · ${{ matrix.service }}
+    needs: version
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [auth-service, authorization-service, products-service, gateway]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        if: matrix.service != 'products-service'
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: P5/apps/${{ matrix.service }}/package-lock.json
+      - uses: actions/setup-python@v6
+        if: matrix.service == 'products-service'
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: P5/apps/products-service/requirements.txt
+      - run: bash P7/scripts/test-service.sh "${{ matrix.service }}"
+
+  validate-helm:
+    name: 2 · Validar Helm y Bash
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.21.3
+      - name: Validar scripts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck P7/scripts/*.sh
+          for script in P7/scripts/*.sh; do bash -n "$script"; done
+      - run: bash P7/scripts/helm-ci.sh
+
+  docker:
+    name: 3 · Docker · ${{ matrix.service }}
+    needs: [version, build-node, build-python, test, validate-helm]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-service
+          - authorization-service
+          - products-service
+          - orders-service
+          - notifications-service
+          - gateway
+          - frontend
+          - cron-jobs
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: P5/apps/${{ matrix.service }}
+          push: false
+          tags: sa-p7/${{ matrix.service }}:${{ needs.version.outputs.image_tag }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=/api
+            NEXT_PUBLIC_GATEWAY_URL=/
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  deploy-kind:
+    name: 4 · Despliegue K8s · Kind efímero
+    needs: [version, docker]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: helm/kind-action@v1.14.0
+        with:
+          cluster_name: sa-p7-ci
+          wait: 120s
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.21.3
+      - name: Construir y cargar las imágenes en Kind
+        env:
+          IMAGE_TAG: ${{ needs.version.outputs.image_tag }}
+        run: |
+          services=(auth-service authorization-service products-service orders-service notifications-service gateway frontend cron-jobs)
+          for service in "${services[@]}"; do
+            docker build \
+              --build-arg NEXT_PUBLIC_API_URL=/api \
+              --build-arg NEXT_PUBLIC_GATEWAY_URL=/ \
+              -t "sa-p7/${service}:${IMAGE_TAG}" "P5/apps/${service}"
+            kind load docker-image "sa-p7/${service}:${IMAGE_TAG}" --name sa-p7-ci
+          done
+      - name: Generar secretos efímeros
+        run: bash P7/scripts/generate-helm-values.sh "$RUNNER_TEMP/values-secrets.yaml"
+      - name: Desplegar con Helm
+        env:
+          REGISTRY: sa-p7
+          IMAGE_TAG: ${{ needs.version.outputs.image_tag }}
+          HELM_VALUES_FILE: P7/charts/sa-platform/values-kind.yaml
+          HELM_SECRETS_FILE: ${{ runner.temp }}/values-secrets.yaml
+          NAMESPACE: sa-p7
+        run: bash P7/scripts/deploy.sh
+      - name: Prueba de humo del clúster
+        run: |
+          kubectl wait --for=condition=Available deployment --all -n sa-p7 --timeout=300s
+          kubectl rollout status statefulset/postgres -n sa-p7 --timeout=300s
+          kubectl rollout status statefulset/rabbitmq -n sa-p7 --timeout=300s
+          kubectl get pods,svc -n sa-p7
+          test "$(kubectl get deployment -n sa-p7 --no-headers | wc -l)" -eq 7
+          test "$(kubectl get pods -n sa-p7 --field-selector=status.phase=Running --no-headers | wc -l)" -ge 9
+      - name: Resumen
+        if: always()
+        run: |
+          echo "### CD sobre Kind efímero" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Imagen/tag: \`${GITHUB_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Namespace: \`sa-p7\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- El clúster se elimina junto con el runner al finalizar." >> "$GITHUB_STEP_SUMMARY"
+          kubectl get pods -n sa-p7 >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
