@@ -55,7 +55,7 @@ P5 contiene otros specs boilerplate sin mocks para Prisma, ConfigService o HttpS
 
 ### 3. Docker
 
-Una matriz independiente construye los ocho Dockerfiles con Buildx. No publica en un registry porque el objetivo solicitado es únicamente validar la pipeline y desplegar localmente en Kind. La caché de GitHub Actions está separada por servicio.
+Una matriz independiente construye los ocho Dockerfiles con Buildx. No publica en un registry porque el objetivo solicitado es únicamente validar la pipeline y desplegar localmente en Kind. La caché de GitHub Actions está separada por servicio. En el job de CD, cada imagen host se elimina inmediatamente después de cargarla al nodo Kind para no duplicar varios GB en el disco limitado del runner.
 
 ### 4. CD en Kind
 

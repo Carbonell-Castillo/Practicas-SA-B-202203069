@@ -142,6 +142,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Liberar disco Docker del runner
+        run: |
+          echo "### Disco antes de limpiar"
+          df -h /
+          docker system prune --all --force
+          echo "### Disco después de limpiar"
+          df -h /
       - uses: helm/kind-action@v1.14.0
         with:
           cluster_name: sa-p7-ci
@@ -160,7 +167,14 @@ jobs:
               --build-arg NEXT_PUBLIC_GATEWAY_URL=/ \
               -t "sa-p7/${service}:${IMAGE_TAG}" "P5/apps/${service}"
             kind load docker-image "sa-p7/${service}:${IMAGE_TAG}" --name sa-p7-ci
+            # Kind ya conserva su copia. Borrar la del host y la caché evita
+            # duplicar varios GB antes de que el nodo descargue Postgres.
+            docker image rm "sa-p7/${service}:${IMAGE_TAG}"
+            docker builder prune --all --force
           done
+          echo "### Disco antes de Helm"
+          df -h /
+          docker exec sa-p7-ci-control-plane df -h /
       - name: Generar secretos efímeros
         run: bash P7/scripts/generate-helm-values.sh "$RUNNER_TEMP/values-secrets.yaml"
       - name: Desplegar con Helm
@@ -179,6 +193,9 @@ jobs:
         run: |
           kubectl get pods,deployments,statefulsets,jobs -n sa-p7 -o wide || true
           kubectl get events -n sa-p7 --sort-by=.lastTimestamp || true
+          echo "### Disco del runner y nodo Kind"
+          df -h / || true
+          docker exec sa-p7-ci-control-plane df -h / || true
           for pod in $(kubectl get pods -n sa-p7 -o name 2>/dev/null); do
             echo "::group::Describe ${pod}"
             kubectl describe -n sa-p7 "${pod}" || true
