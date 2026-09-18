@@ -11,7 +11,7 @@ service:
   targetPort: 8080
 
 health:
-  path: /health
+  path: /ready
 
 ingress:
   enabled: false

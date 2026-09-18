@@ -33,7 +33,12 @@ spec:
                     image: curlimages/curl:8.12.1
                     command: ["sh", "-ec"]
                     args:
-                      - curl --fail --silent --show-error --max-time 5 http://{{ $name }}-canary.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}{{ .Values.health.path }} >/dev/null
+                      - |
+                          for attempt in $(seq 1 15); do
+                            curl --fail --silent --show-error --max-time 5 http://{{ $name }}-canary.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}{{ .Values.health.path }} >/dev/null && exit 0
+                            sleep 2
+                          done
+                          exit 1
                     securityContext:
                       allowPrivilegeEscalation: false
                       capabilities:

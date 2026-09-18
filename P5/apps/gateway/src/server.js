@@ -44,6 +44,15 @@ app.use(
 const openapiDocument = YAML.load(path.join(__dirname, '..', 'docs', 'openapi.yaml'));
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiDocument));
 
+// Readiness local para canary: valida el proceso del gateway sin depender de
+// que los servicios estables ya hayan terminado su propia promoción.
+app.get('/ready', (_req, res) => {
+  if (process.env.P8_INDUCED_FAILURE === 'true') {
+    return res.status(503).json({ gateway: 'failed', induced: true });
+  }
+  return res.status(200).json({ gateway: 'ready' });
+});
+
 // --- Healthcheck agregado: el gateway consulta a los 4 microservicios ---
 app.get('/health', async (_req, res) => {
   // Interruptor controlado para la demostración de reversión de P8. La

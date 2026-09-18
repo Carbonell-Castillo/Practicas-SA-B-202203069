@@ -24,7 +24,6 @@ spec:
             - "ghcr.io/carbonell-castillo/notifications-service:*"
             - "ghcr.io/carbonell-castillo/gateway:*"
             - "ghcr.io/carbonell-castillo/frontend:*"
-          cosignOCI11: true
           required: true
           mutateDigest: true
           verifyDigest: true
