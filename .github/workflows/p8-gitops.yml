@@ -148,6 +148,7 @@ jobs:
         with:
           context: P5/apps/${{ matrix.service }}
           push: true
+          pull: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ matrix.service }}:${{ needs.version.outputs.value }}
           build-args: |
             NEXT_PUBLIC_API_URL=/api
