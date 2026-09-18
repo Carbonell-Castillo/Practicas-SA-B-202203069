@@ -30,7 +30,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_OWNER: ${{ github.repository_owner }}
+  IMAGE_OWNER: carbonell-castillo
 
 jobs:
   version:
@@ -156,7 +156,7 @@ jobs:
           cache-from: type=gha,scope=p8-${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=p8-${{ matrix.service }}
       - name: Trivy bloquea CVE críticas
-        uses: aquasecurity/trivy-action@0.32.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ matrix.service }}:${{ needs.version.outputs.value }}
           format: sarif
@@ -165,12 +165,12 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
       - name: Generar SBOM SPDX
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@v0.24.2
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ matrix.service }}@${{ steps.build.outputs.digest }}
           format: spdx-json
           output-file: sbom-${{ matrix.service }}.spdx.json
-      - uses: sigstore/cosign-installer@v3
+      - uses: sigstore/cosign-installer@v4.1.2
       - name: Firma keyless de la imagen inmutable
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ matrix.service }}@${{ steps.build.outputs.digest }}
