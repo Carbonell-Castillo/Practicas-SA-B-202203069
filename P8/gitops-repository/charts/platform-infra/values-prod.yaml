@@ -1,0 +1,4 @@
+postgresql:
+  storage: 10Gi
+rabbitmq:
+  storage: 5Gi

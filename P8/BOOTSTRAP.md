@@ -8,9 +8,9 @@ Crear el secret de Actions `GITOPS_TOKEN` con permiso mínimo para escribir rama
 
 ## 2. Componentes del clúster
 
-Instalar una vez ArgoCD, Argo Rollouts, Kyverno y External Secrets con sus métodos oficiales. Crear el `ClusterSecretStore` llamado `platform-secret-store` y almacenar bajo `sa-p8/prod/runtime` las propiedades `DATABASE_URL`, `JWT_SECRET`, `AES_KEY` y `RABBITMQ_URL`.
+Instalar una vez ArgoCD, Argo Rollouts, Kyverno, Sealed Secrets e ingress-nginx con sus charts oficiales. Los secretos se generan localmente, se cifran con `kubeseal` contra el controlador del clúster y sólo se publica `manifests/prod/sealed-secrets.yaml`.
 
-Ejecutar Terraform desde la estación administrativa y guardar `plan`/`apply` en `P8/evidence`. Aplicar el bootstrap de `AppProject`, políticas y `Application`. Es la única aplicación manual; los cambios posteriores entran por Git.
+Ejecutar Terraform desde la estación administrativa y guardar `plan`/`apply` en `P8/evidence`. Aplicar únicamente el bootstrap de `AppProject` y `Application`; ArgoCD reconcilia charts, manifiestos y políticas desde Git. Los cambios posteriores entran por Pull Request.
 
 ## 3. Release normal
 

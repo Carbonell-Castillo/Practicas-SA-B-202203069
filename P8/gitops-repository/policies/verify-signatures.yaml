@@ -2,6 +2,8 @@ apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
   name: verify-ghcr-signatures
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   validationFailureAction: Enforce
   webhookTimeoutSeconds: 30
@@ -15,7 +17,14 @@ spec:
               namespaces: [sa-p8-prod]
       verifyImages:
         - imageReferences:
-            - "ghcr.io/carbonell-castillo/*:*"
+            - "ghcr.io/carbonell-castillo/auth-service:*"
+            - "ghcr.io/carbonell-castillo/authorization-service:*"
+            - "ghcr.io/carbonell-castillo/products-service:*"
+            - "ghcr.io/carbonell-castillo/orders-service:*"
+            - "ghcr.io/carbonell-castillo/notifications-service:*"
+            - "ghcr.io/carbonell-castillo/gateway:*"
+            - "ghcr.io/carbonell-castillo/frontend:*"
+          cosignOCI11: true
           required: true
           mutateDigest: true
           verifyDigest: true
@@ -24,3 +33,5 @@ spec:
                 - keyless:
                     subjectRegExp: "https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/.*"
                     issuer: "https://token.actions.githubusercontent.com"
+                    rekor:
+                      url: https://rekor.sigstore.dev

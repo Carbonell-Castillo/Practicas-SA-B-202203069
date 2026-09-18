@@ -61,6 +61,12 @@ spec:
         valueFiles: [values-prod.yaml]
     - repoURL: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
       targetRevision: main
+      path: charts/platform-infra
+      helm:
+        releaseName: platform-infra
+        valueFiles: [values-prod.yaml]
+    - repoURL: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
+      targetRevision: main
       path: manifests/prod
       directory:
         recurse: true

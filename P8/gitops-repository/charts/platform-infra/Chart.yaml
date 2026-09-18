@@ -1,0 +1,6 @@
+apiVersion: v2
+name: platform-infra
+description: PostgreSQL y RabbitMQ administrados declarativamente por ArgoCD
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

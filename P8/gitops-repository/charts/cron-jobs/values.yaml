@@ -2,6 +2,8 @@ image:
   repository: ghcr.io/carbonell-castillo/cron-jobs
   tag: "1.0.0"
 
+secretName: cron-runtime
+
 heartbeat:
   schedule: "*/2 * * * *"
 summary:

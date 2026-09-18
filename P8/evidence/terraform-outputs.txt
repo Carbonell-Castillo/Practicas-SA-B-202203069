@@ -1,0 +1,5 @@
+﻿argocd_service_account = "argocd-deployer"
+cluster_location = "us-central1-a"
+cluster_name = "sa-p8"
+kubectl_credentials_command = "gcloud container clusters get-credentials sa-p8 --zone us-central1-a --project softwareavanzado-507703"
+namespace = "sa-p8-prod"

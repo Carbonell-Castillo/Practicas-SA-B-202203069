@@ -1,0 +1,798 @@
+﻿# data.google_client_config.current:
+data "google_client_config" "current" {
+    access_token   = (sensitive value)
+    default_labels = {}
+    id             = "projects/softwareavanzado-507703/regions/us-central1/zones/us-central1-a"
+    project        = "softwareavanzado-507703"
+    region         = "us-central1"
+    zone           = "us-central1-a"
+}
+
+# google_compute_network.gke:
+resource "google_compute_network" "gke" {
+    auto_create_subnetworks                   = false
+    bgp_always_compare_med                    = false
+    bgp_best_path_selection_mode              = "LEGACY"
+    bgp_inter_region_cost                     = null
+    delete_bgp_always_compare_med             = false
+    delete_default_routes_on_create           = false
+    deletion_policy                           = "DELETE"
+    description                               = null
+    enable_ula_internal_ipv6                  = false
+    gateway_ipv4                              = null
+    id                                        = "projects/softwareavanzado-507703/global/networks/sa-p8-vpc"
+    internal_ipv6_range                       = null
+    mtu                                       = 0
+    name                                      = "sa-p8-vpc"
+    network_firewall_policy_enforcement_order = "AFTER_CLASSIC_FIREWALL"
+    network_id                                = "5185295929078525412"
+    network_profile                           = null
+    numeric_id                                = "5185295929078525412"
+    project                                   = "softwareavanzado-507703"
+    routing_mode                              = "REGIONAL"
+    self_link                                 = "https://www.googleapis.com/compute/v1/projects/softwareavanzado-507703/global/networks/sa-p8-vpc"
+}
+
+# google_compute_subnetwork.gke:
+resource "google_compute_subnetwork" "gke" {
+    allow_subnet_cidr_routes_overlap = false
+    creation_timestamp               = "2026-09-17T18:25:53.194-07:00"
+    deletion_policy                  = "DELETE"
+    description                      = null
+    external_ipv6_prefix             = null
+    gateway_address                  = "10.80.0.1"
+    id                               = "projects/softwareavanzado-507703/regions/us-central1/subnetworks/sa-p8-subnet"
+    internal_ipv6_prefix             = null
+    ip_cidr_range                    = "10.80.0.0/20"
+    ip_collection                    = null
+    ipv6_access_type                 = null
+    ipv6_cidr_range                  = null
+    ipv6_gce_endpoint                = null
+    name                             = "sa-p8-subnet"
+    network                          = "https://www.googleapis.com/compute/v1/projects/softwareavanzado-507703/global/networks/sa-p8-vpc"
+    private_ip_google_access         = false
+    private_ipv6_google_access       = "DISABLE_GOOGLE_ACCESS"
+    project                          = "softwareavanzado-507703"
+    purpose                          = "PRIVATE"
+    region                           = "us-central1"
+    reserved_internal_range          = null
+    resolve_subnet_mask              = null
+    role                             = null
+    self_link                        = "https://www.googleapis.com/compute/v1/projects/softwareavanzado-507703/regions/us-central1/subnetworks/sa-p8-subnet"
+    stack_type                       = "IPV4_ONLY"
+    state                            = null
+    subnetwork_id                    = 906482507589955022
+
+    secondary_ip_range {
+        ip_cidr_range           = "10.84.0.0/14"
+        range_name              = "sa-p8-pods"
+        reserved_internal_range = null
+    }
+    secondary_ip_range {
+        ip_cidr_range           = "10.88.0.0/20"
+        range_name              = "sa-p8-services"
+        reserved_internal_range = null
+    }
+}
+
+# google_container_cluster.primary:
+resource "google_container_cluster" "primary" {
+    autopilot_privileged_admission           = []
+    cluster_ipv4_cidr                        = "10.84.0.0/14"
+    datapath_provider                        = null
+    default_max_pods_per_node                = 110
+    deletion_policy                          = "DELETE"
+    deletion_protection                      = false
+    description                              = null
+    disable_l4_lb_firewall_reconciliation    = false
+    effective_labels                         = {
+        "goog-terraform-provisioned" = "true"
+    }
+    emulated_version                         = null
+    enable_autopilot                         = false
+    enable_cilium_clusterwide_network_policy = false
+    enable_fqdn_network_policy               = false
+    enable_intranode_visibility              = false
+    enable_kubernetes_alpha                  = false
+    enable_l4_ilb_subsetting                 = false
+    enable_legacy_abac                       = false
+    enable_multi_networking                  = false
+    enable_shielded_nodes                    = true
+    enable_tpu                               = false
+    endpoint                                 = "34.55.237.149"
+    id                                       = "projects/softwareavanzado-507703/locations/us-central1-a/clusters/sa-p8"
+    in_transit_encryption_config             = null
+    initial_node_count                       = 1
+    label_fingerprint                        = "78cdf2f6"
+    location                                 = "us-central1-a"
+    logging_service                          = "logging.googleapis.com/kubernetes"
+    master_version                           = "1.35.7-gke.1222000"
+    monitoring_service                       = "monitoring.googleapis.com/kubernetes"
+    name                                     = "sa-p8"
+    network                                  = "projects/softwareavanzado-507703/global/networks/sa-p8-vpc"
+    networking_mode                          = "VPC_NATIVE"
+    node_locations                           = []
+    node_version                             = "1.35.7-gke.1222000"
+    private_ipv6_google_access               = null
+    project                                  = "softwareavanzado-507703"
+    remove_default_node_pool                 = true
+    self_link                                = "https://container.googleapis.com/v1/projects/softwareavanzado-507703/zones/us-central1-a/clusters/sa-p8"
+    services_ipv4_cidr                       = "10.88.0.0/20"
+    subnetwork                               = "projects/softwareavanzado-507703/regions/us-central1/subnetworks/sa-p8-subnet"
+    terraform_labels                         = {
+        "goog-terraform-provisioned" = "true"
+    }
+    tpu_ipv4_cidr_block                      = null
+
+    addons_config {
+        dns_cache_config {
+            enabled = true
+        }
+        gce_persistent_disk_csi_driver_config {
+            enabled = true
+        }
+        horizontal_pod_autoscaling {
+            disabled = false
+        }
+        http_load_balancing {
+            disabled = true
+        }
+        network_policy_config {
+            disabled = true
+        }
+        node_readiness_config {
+            enabled = false
+        }
+    }
+
+    anonymous_authentication_config {
+        mode = "LIMITED"
+    }
+
+    binary_authorization {
+        enabled         = false
+        evaluation_mode = null
+    }
+
+    cluster_autoscaling {
+        auto_provisioning_locations   = []
+        autoscaling_profile           = "BALANCED"
+        default_compute_class_enabled = false
+        enabled                       = false
+
+        auto_provisioning_defaults {
+            boot_disk_kms_key = null
+            disk_size         = 0
+            disk_type         = null
+            image_type        = "COS_CONTAINERD"
+            min_cpu_platform  = null
+            oauth_scopes      = [
+                "https://www.googleapis.com/auth/devstorage.read_only",
+                "https://www.googleapis.com/auth/logging.write",
+                "https://www.googleapis.com/auth/monitoring",
+                "https://www.googleapis.com/auth/service.management.readonly",
+                "https://www.googleapis.com/auth/servicecontrol",
+                "https://www.googleapis.com/auth/trace.append",
+            ]
+            service_account   = "default"
+
+            management {
+                auto_repair     = true
+                auto_upgrade    = true
+                upgrade_options = []
+            }
+        }
+    }
+
+    control_plane_endpoints_config {
+        dns_endpoint_config {
+            allow_external_traffic    = false
+            enable_k8s_certs_via_dns  = false
+            enable_k8s_tokens_via_dns = false
+            endpoint                  = "gke-9f6deb63764d46e6ae80e3bf5885ecb5ef33-58055843641.us-central1-a.gke.goog"
+        }
+        ip_endpoints_config {
+            enabled = true
+        }
+    }
+
+    database_encryption {
+        key_name = null
+        state    = "DECRYPTED"
+    }
+
+    default_snat_status {
+        disabled = false
+    }
+
+    enterprise_config {
+        cluster_tier = "STANDARD"
+        desired_tier = null
+    }
+
+    ip_allocation_policy {
+        cluster_ipv4_cidr_block       = "10.84.0.0/14"
+        cluster_secondary_range_name  = "sa-p8-pods"
+        services_ipv4_cidr_block      = "10.88.0.0/20"
+        services_secondary_range_name = "sa-p8-services"
+        stack_type                    = "IPV4"
+
+        network_tier_config {
+            network_tier = "NETWORK_TIER_DEFAULT"
+        }
+
+        pod_cidr_overprovision_config {
+            disabled = false
+        }
+    }
+
+    logging_config {
+        enable_components = [
+            "SYSTEM_COMPONENTS",
+            "WORKLOADS",
+        ]
+    }
+
+    master_auth {
+        client_certificate     = null
+        client_key             = (sensitive value)
+        cluster_ca_certificate = "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVMRENDQXBTZ0F3SUJBZ0lRQm1GSVM5YVY1V0ZpUVNZS1Y3TXUxakFOQmdrcWhraUc5dzBCQVFzRkFEQXYKTVMwd0t3WURWUVFERXlRellUTm1Nek5tWXkwMk9HRTJMVFJoTkdVdE9HSmlOUzB5WldOa016WTVZMk0yTVRJdwpJQmNOTWpZd09URTRNREF5TmpFMldoZ1BNakExTmpBNU1UQXdNVEkyTVRaYU1DOHhMVEFyQmdOVkJBTVRKRE5oCk0yWXpNMlpqTFRZNFlUWXROR0UwWlMwNFltSTFMVEpsWTJRek5qbGpZell4TWpDQ0FhSXdEUVlKS29aSWh2Y04KQVFFQkJRQURnZ0dQQURDQ0FZb0NnZ0dCQUpvWElzU2VZUzJFWExEdGd6SW1HMXd3bGZEbzBVdytiK3VNYngwZwpzWWFHVnR3N25xdW4vdDI5Z0dOcFkzeUFtdm5XNzRYNXZ5MWV2SlBWMnhScE9vdjdxNmxKb1RPTldnRmUrYXpRCnJkOHBjQTdNeUU0S3VLUC9GTGQ5TUcrNjQwNWJNTldaWTBlN3VRRnV2dXVSZlJJWGs0NnlrTXVIQjdOaERPVGoKRndHa0UvWTRqR29ybkxSLzhCaXlqaDlxczF0Vy9FMFRISnpReWd1Nzhpa2tpb3EwdnQ0RnZCLzRDRTRIYjlUWAo3aUtoT0pZWlVhcFpwMUQzRi8vbldsbUZFRG5iUGFnbkNRbitXeUw2MFZwcWd6a1FBdjVIdGFWbU9EKytUZEljCjhteno2ZkhzMkQ5bVdoL3ZEeG92RHI4enVYK29EdXR1eEtQWkRVYUxabW5STzBlRFZ2NWo3R1FUUHFmYnkwcjEKNzc5WGdHOEQ4MmhqK2gzSmpBcElvYys0V0hiVjZCbGZqaWQ2SmFMYlpVdmFsQlZ1dmE0c2sycDR1VzE1VWFyLwp2WlFhWGhrV1FIMTRtbzNXa01aeVVUazhCa2ZTb0xlUE0yZUtlMUJLcldZNzdHMHZOQzZ1V1FoK2tSUExrOEVNClVVMy9JV3dHQ29lTVV1SHhteldVc2NVWWV3SURBUUFCbzBJd1FEQU9CZ05WSFE4QkFmOEVCQU1DQWdRd0R3WUQKVlIwVEFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVV3aVBzdTZLNExvc1NVdVNIRHc3UUllMHZJaGd3RFFZSgpLb1pJaHZjTkFRRUxCUUFEZ2dHQkFEc0JvYnU3UTZMSGl3Sllkb2VSTVpkSDYyNytyOEo3eDdKekFUVnNDSmJBClI0bStZemRZalR6T2VqdzlqdUI3RFI5dERUYTd5NDJDTWx2Q1prUWVIVytwTWcxNjVvbGpVcCtxT05YRW8xMXAKeURSWjdaRXFPOFVHTlRaZExzYXpCdEEydldyZ3hyb0Fza2lhT1BRb0VycHAvOHAzemxMN1B4MXlIamlGVkovMwo2TUdjZHdmR3FXYWVrK0JXSXNtdm8rNExWS1h2VlhzbU1vRmdkQXhqZlRaeDkvTmxHMEtacGZnS3ZiajgzdUdJCkpOVnRQNXJuNWx6emg4ZmRiZitOOUpkTlB1MHphQjJuNGdlVFFyaC9UYm5sWHNSWDVkTy95QUt0bVQ3T0paN3oKc1B3M0ZUNVRna3lRRVJrSWh2blNsTlFwQ3NubmdDTmVCcDgzVERJeG1jR2hEM3o3cFVad05yaklxSGQyYjBiRApMWFpsblBkMmRNYWRVZ2tvaGQwcTRUUlYzTEVhTi9LUWd5M3Z6RFpFeWZGUnNxdUdwZlJnd3IyWGxRL1FqN0xhCmM4ZnRuZVovbVpoRDlPN0U1bVhTOWtKbk0yQjBHeVAweDlmMmtmU0hQR3JkczAwTDBsRGVKek1BN1hSMkp2a1gKTVluNEwyN2ZYL0xOUkZWNkFKYU5LUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
+
+        client_certificate_config {
+            issue_client_certificate = false
+        }
+    }
+
+    monitoring_config {
+        enable_components = [
+            "SYSTEM_COMPONENTS",
+            "STORAGE",
+            "HPA",
+            "POD",
+            "DAEMONSET",
+            "DEPLOYMENT",
+            "STATEFULSET",
+            "CADVISOR",
+            "KUBELET",
+            "DCGM",
+            "JOBSET",
+        ]
+
+        advanced_datapath_observability_config {
+            enable_metrics = false
+            enable_relay   = false
+        }
+
+        managed_prometheus {
+            enabled = true
+        }
+    }
+
+    network_policy {
+        enabled  = false
+        provider = "PROVIDER_UNSPECIFIED"
+    }
+
+    node_creation_config {
+        node_creation_mode = "VIA_KUBELET"
+    }
+
+    node_pool_auto_config {
+        resource_manager_tags = {}
+
+        node_kubelet_config {
+            insecure_kubelet_readonly_port_enabled = "FALSE"
+        }
+    }
+
+    node_pool_defaults {
+        node_config_defaults {
+            insecure_kubelet_readonly_port_enabled = "FALSE"
+            logging_variant                        = "DEFAULT"
+        }
+    }
+
+    notification_config {
+        pubsub {
+            enabled = false
+            topic   = null
+        }
+    }
+
+    pod_autoscaling {
+        hpa_profile = "PERFORMANCE"
+    }
+
+    private_cluster_config {
+        enable_private_endpoint     = false
+        enable_private_nodes        = false
+        master_ipv4_cidr_block      = null
+        peering_name                = null
+        private_endpoint            = "10.80.0.2"
+        private_endpoint_subnetwork = null
+        public_endpoint             = "34.55.237.149"
+
+        master_global_access_config {
+            enabled = false
+        }
+    }
+
+    rbac_binding_config {
+        enable_insecure_binding_system_authenticated   = true
+        enable_insecure_binding_system_unauthenticated = true
+    }
+
+    release_channel {
+        channel = "REGULAR"
+    }
+
+    secret_manager_config {
+        enabled = false
+    }
+
+    secret_sync_config {
+        enabled = false
+    }
+
+    security_posture_config {
+        mode               = "BASIC"
+        vulnerability_mode = "VULNERABILITY_MODE_UNSPECIFIED"
+    }
+
+    service_external_ips_config {
+        enabled = false
+    }
+
+    workload_identity_config {
+        workload_pool = "softwareavanzado-507703.svc.id.goog"
+    }
+}
+
+# google_container_node_pool.primary:
+resource "google_container_node_pool" "primary" {
+    cluster                     = "sa-p8"
+    deletion_policy             = "DELETE"
+    id                          = "projects/softwareavanzado-507703/locations/us-central1-a/clusters/sa-p8/nodePools/sa-p8-pool"
+    ignore_node_count_changes   = false
+    initial_node_count          = 2
+    instance_group_urls         = [
+        "https://www.googleapis.com/compute/v1/projects/softwareavanzado-507703/zones/us-central1-a/instanceGroupManagers/gke-sa-p8-sa-p8-pool-8e19f662-grp",
+    ]
+    location                    = "us-central1-a"
+    managed_instance_group_urls = [
+        "https://www.googleapis.com/compute/v1/projects/softwareavanzado-507703/zones/us-central1-a/instanceGroups/gke-sa-p8-sa-p8-pool-8e19f662-grp",
+    ]
+    max_pods_per_node           = 110
+    name                        = "sa-p8-pool"
+    name_prefix                 = null
+    node_count                  = 2
+    node_locations              = [
+        "us-central1-a",
+    ]
+    project                     = "softwareavanzado-507703"
+    version                     = "1.35.7-gke.1222000"
+
+    management {
+        auto_repair  = true
+        auto_upgrade = true
+    }
+
+    network_config {
+        accelerator_network_profile = null
+        create_pod_range            = false
+        enable_private_nodes        = false
+        pod_ipv4_cidr_block         = "10.84.0.0/14"
+        pod_range                   = "sa-p8-pods"
+        subnetwork                  = "projects/softwareavanzado-507703/regions/us-central1/subnetworks/sa-p8-subnet"
+    }
+
+    node_config {
+        boot_disk_kms_key           = null
+        disk_size_gb                = 50
+        disk_type                   = "pd-balanced"
+        effective_taints            = []
+        enable_confidential_storage = false
+        flex_start                  = false
+        gpudirect_strategy          = null
+        image_type                  = "COS_CONTAINERD"
+        labels                      = {
+            "environment" = "prod"
+            "workload"    = "sa-platform"
+        }
+        local_ssd_count             = 0
+        local_ssd_encryption_mode   = null
+        logging_variant             = "DEFAULT"
+        machine_type                = "e2-standard-4"
+        max_run_duration            = null
+        metadata                    = {
+            "disable-legacy-endpoints" = "true"
+        }
+        min_cpu_platform            = null
+        node_group                  = null
+        oauth_scopes                = [
+            "https://www.googleapis.com/auth/cloud-platform",
+        ]
+        preemptible                 = false
+        resource_labels             = {
+            "goog-gke-node-pool-provisioning-model" = "on-demand"
+        }
+        service_account             = "default"
+        spot                        = false
+
+        boot_disk {
+            disk_type              = "pd-balanced"
+            provisioned_iops       = 0
+            provisioned_throughput = 0
+            size_gb                = 50
+        }
+
+        kubelet_config {
+            allowed_unsafe_sysctls                      = []
+            container_log_max_files                     = 0
+            container_log_max_size                      = null
+            cpu_cfs_quota                               = false
+            cpu_cfs_quota_period                        = null
+            cpu_manager_policy                          = null
+            eviction_max_pod_grace_period_seconds       = 0
+            image_gc_high_threshold_percent             = 0
+            image_gc_low_threshold_percent              = 0
+            image_maximum_gc_age                        = null
+            image_minimum_gc_age                        = null
+            insecure_kubelet_readonly_port_enabled      = "FALSE"
+            max_parallel_image_pulls                    = 3
+            pod_pids_limit                              = 0
+            shutdown_grace_period_critical_pods_seconds = 0
+            shutdown_grace_period_seconds               = 0
+            single_process_oom_kill                     = false
+        }
+
+        node_image_config {
+            image         = "gke-1357-gke1222000-cos-125-19216-532-62-c-pre"
+            image_project = "gke-node-images"
+        }
+
+        shielded_instance_config {
+            enable_integrity_monitoring = true
+            enable_secure_boot          = true
+        }
+
+        windows_node_config {
+            osversion = null
+        }
+
+        workload_metadata_config {
+            mode = "GKE_METADATA"
+        }
+    }
+
+    upgrade_settings {
+        max_surge       = 1
+        max_unavailable = 0
+        strategy        = "SURGE"
+    }
+}
+
+# google_project_service.required["compute.googleapis.com"]:
+resource "google_project_service" "required" {
+    deletion_policy    = "DELETE"
+    disable_on_destroy = false
+    id                 = "softwareavanzado-507703/compute.googleapis.com"
+    project            = "softwareavanzado-507703"
+    service            = "compute.googleapis.com"
+}
+
+# google_project_service.required["container.googleapis.com"]:
+resource "google_project_service" "required" {
+    deletion_policy    = "DELETE"
+    disable_on_destroy = false
+    id                 = "softwareavanzado-507703/container.googleapis.com"
+    project            = "softwareavanzado-507703"
+    service            = "container.googleapis.com"
+}
+
+# kubernetes_limit_range_v1.platform:
+resource "kubernetes_limit_range_v1" "platform" {
+    id = "sa-p8-prod/sa-platform-defaults"
+
+    metadata {
+        generate_name    = null
+        generation       = 0
+        name             = "sa-platform-defaults"
+        namespace        = "sa-p8-prod"
+        resource_version = "1789695261020015006"
+        uid              = "0948574b-cba5-4da2-b855-2d203152a6c3"
+    }
+
+    spec {
+        limit {
+            default         = {
+                "cpu"    = "500m"
+                "memory" = "512Mi"
+            }
+            default_request = {
+                "cpu"    = "100m"
+                "memory" = "128Mi"
+            }
+            type            = "Container"
+        }
+    }
+}
+
+# kubernetes_namespace_v1.addons["argo-rollouts"]:
+resource "kubernetes_namespace_v1" "addons" {
+    id                               = "argo-rollouts"
+    wait_for_default_service_account = false
+
+    metadata {
+        generate_name    = null
+        generation       = 0
+        labels           = {
+            "app.kubernetes.io/managed-by" = "terraform"
+            "environment"                  = "prod"
+        }
+        name             = "argo-rollouts"
+        resource_version = "1789695260678959001"
+        uid              = "8f11692f-5010-4c99-9f2e-65e85046e30b"
+    }
+}
+
+# kubernetes_namespace_v1.addons["argocd"]:
+resource "kubernetes_namespace_v1" "addons" {
+    id                               = "argocd"
+    wait_for_default_service_account = false
+
+    metadata {
+        generate_name    = null
+        generation       = 0
+        labels           = {
+            "app.kubernetes.io/managed-by" = "terraform"
+            "environment"                  = "prod"
+        }
+        name             = "argocd"
+        resource_version = "1789695260657375000"
+        uid              = "e2b87082-2c97-4598-9488-dab2f145a051"
+    }
+}
+
+# kubernetes_namespace_v1.addons["ingress-nginx"]:
+resource "kubernetes_namespace_v1" "addons" {
+    id                               = "ingress-nginx"
+    wait_for_default_service_account = false
+
+    metadata {
+        generate_name    = null
+        generation       = 0
+        labels           = {
+            "app.kubernetes.io/managed-by" = "terraform"
+            "environment"                  = "prod"
+        }
+        name             = "ingress-nginx"
+        resource_version = "1789695260685007011"
+        uid              = "f9befba1-b263-4f0d-bb53-23e7a993ff1e"
+    }
+}
+
+# kubernetes_namespace_v1.addons["kyverno"]:
+resource "kubernetes_namespace_v1" "addons" {
+    id                               = "kyverno"
+    wait_for_default_service_account = false
+
+    metadata {
+        generate_name    = null
+        generation       = 0
+        labels           = {
+            "app.kubernetes.io/managed-by" = "terraform"
+            "environment"                  = "prod"
+        }
+        name             = "kyverno"
+        resource_version = "1789695260653503006"
+        uid              = "444d38a8-2565-401d-bf46-3ad4d6700223"
+    }
+}
+
+# kubernetes_namespace_v1.addons["sealed-secrets"]:
+resource "kubernetes_namespace_v1" "addons" {
+    id                               = "sealed-secrets"
+    wait_for_default_service_account = false
+
+    metadata {
+        generate_name    = null
+        generation       = 0
+        labels           = {
+            "app.kubernetes.io/managed-by" = "terraform"
+            "environment"                  = "prod"
+        }
+        name             = "sealed-secrets"
+        resource_version = "1789695260648063002"
+        uid              = "f68c5b1d-85de-403c-ae23-be1878cefae1"
+    }
+}
+
+# kubernetes_namespace_v1.platform:
+resource "kubernetes_namespace_v1" "platform" {
+    id                               = "sa-p8-prod"
+    wait_for_default_service_account = false
+
+    metadata {
+        generate_name    = null
+        generation       = 0
+        labels           = {
+            "app.kubernetes.io/managed-by" = "terraform"
+            "app.kubernetes.io/part-of"    = "sa-platform"
+            "environment"                  = "prod"
+        }
+        name             = "sa-p8-prod"
+        resource_version = "1789695260672319011"
+        uid              = "6f457cba-6036-447c-890f-586b1fc591ef"
+    }
+}
+
+# kubernetes_resource_quota_v1.platform:
+resource "kubernetes_resource_quota_v1" "platform" {
+    id = "sa-p8-prod/sa-platform-quota"
+
+    metadata {
+        generate_name    = null
+        generation       = 0
+        name             = "sa-platform-quota"
+        namespace        = "sa-p8-prod"
+        resource_version = "1789695261035007001"
+        uid              = "5469aafb-8d33-47f4-8451-07a2a04fd17c"
+    }
+
+    spec {
+        hard = {
+            "limits.cpu"      = "20"
+            "limits.memory"   = "24Gi"
+            "pods"            = "80"
+            "requests.cpu"    = "8"
+            "requests.memory" = "12Gi"
+        }
+    }
+}
+
+# kubernetes_role_binding_v1.argocd_deployer:
+resource "kubernetes_role_binding_v1" "argocd_deployer" {
+    id = "sa-p8-prod/argocd-deployer"
+
+    metadata {
+        generate_name    = null
+        generation       = 0
+        name             = "argocd-deployer"
+        namespace        = "sa-p8-prod"
+        resource_version = "1789695261466239017"
+        uid              = "725dc70a-869a-4d2b-815d-bdf8d028bc00"
+    }
+
+    role_ref {
+        api_group = "rbac.authorization.k8s.io"
+        kind      = "Role"
+        name      = "argocd-deployer"
+    }
+
+    subject {
+        api_group = null
+        kind      = "ServiceAccount"
+        name      = "argocd-deployer"
+        namespace = "sa-p8-prod"
+    }
+}
+
+# kubernetes_role_v1.argocd_deployer:
+resource "kubernetes_role_v1" "argocd_deployer" {
+    id = "sa-p8-prod/argocd-deployer"
+
+    metadata {
+        generate_name    = null
+        generation       = 0
+        name             = "argocd-deployer"
+        namespace        = "sa-p8-prod"
+        resource_version = "1789695261042063015"
+        uid              = "d16b329c-c8ad-4930-9d0e-538769cfeceb"
+    }
+
+    rule {
+        api_groups = [
+            null,
+        ]
+        resources  = [
+            "configmaps",
+            "secrets",
+            "serviceaccounts",
+            "services",
+        ]
+        verbs      = [
+            "create",
+            "delete",
+            "get",
+            "list",
+            "patch",
+            "update",
+            "watch",
+        ]
+    }
+    rule {
+        api_groups = [
+            "apps",
+        ]
+        resources  = [
+            "deployments",
+            "statefulsets",
+        ]
+        verbs      = [
+            "create",
+            "delete",
+            "get",
+            "list",
+            "patch",
+            "update",
+            "watch",
+        ]
+    }
+    rule {
+        api_groups = [
+            "argoproj.io",
+        ]
+        resources  = [
+            "analysisruns",
+            "analysistemplates",
+            "rollouts",
+        ]
+        verbs      = [
+            "create",
+            "delete",
+            "get",
+            "list",
+            "patch",
+            "update",
+            "watch",
+        ]
+    }
+    rule {
+        api_groups = [
+            "bitnami.com",
+        ]
+        resources  = [
+            "sealedsecrets",
+        ]
+        verbs      = [
+            "create",
+            "delete",
+            "get",
+            "list",
+            "patch",
+            "update",
+            "watch",
+        ]
+    }
+}
+
+# kubernetes_service_account_v1.argocd_deployer:
+resource "kubernetes_service_account_v1" "argocd_deployer" {
+    automount_service_account_token = false
+    default_secret_name             = null
+    id                              = "sa-p8-prod/argocd-deployer"
+
+    metadata {
+        generate_name    = null
+        generation       = 0
+        labels           = {
+            "app.kubernetes.io/managed-by" = "terraform"
+            "app.kubernetes.io/part-of"    = "sa-platform"
+            "environment"                  = "prod"
+        }
+        name             = "argocd-deployer"
+        namespace        = "sa-p8-prod"
+        resource_version = "1789695261015807011"
+        uid              = "aa6cca34-4d54-4acb-97eb-43a7ee496e03"
+    }
+}
+
+
+Outputs:
+
+argocd_service_account = "argocd-deployer"
+cluster_location = "us-central1-a"
+cluster_name = "sa-p8"
+kubectl_credentials_command = "gcloud container clusters get-credentials sa-p8 --zone us-central1-a --project softwareavanzado-507703"
+namespace = "sa-p8-prod"

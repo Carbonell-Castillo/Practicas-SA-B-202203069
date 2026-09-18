@@ -1,0 +1,21 @@
+postgresql:
+  image: postgres:17.6-alpine3.22
+  storage: 10Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+rabbitmq:
+  image: rabbitmq:4.1.4-management-alpine
+  storage: 5Gi
+  resources:
+    requests:
+      cpu: 200m
+      memory: 384Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi

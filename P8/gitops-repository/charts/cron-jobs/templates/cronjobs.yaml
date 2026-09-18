@@ -28,6 +28,8 @@ spec:
           automountServiceAccountToken: false
           securityContext:
             runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
             seccompProfile:
               type: RuntimeDefault
           containers:
@@ -36,8 +38,7 @@ spec:
               args: [{{ $name | quote }}]
               envFrom:
                 - secretRef:
-                    name: sa-platform-runtime
-                    optional: true
+                    name: {{ $.Values.secretName }}
               env:
 {{- range $key, $value := $.Values.env }}
                 - name: {{ $key }}

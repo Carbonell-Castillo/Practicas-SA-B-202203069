@@ -1,4 +1,8 @@
-environment        = "prod"
-namespace          = "sa-p8-prod"
-kubeconfig_path    = null
-kubeconfig_context = null
+project_id   = "softwareavanzado-507703"
+region       = "us-central1"
+zone         = "us-central1-a"
+cluster_name = "sa-p8"
+node_count   = 2
+machine_type = "e2-standard-4"
+environment  = "prod"
+namespace    = "sa-p8-prod"

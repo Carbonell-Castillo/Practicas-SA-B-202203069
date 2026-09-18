@@ -3,5 +3,6 @@ p8.conf
 *.tfstate.*
 .terraform/
 terraform.tfvars
+*.tfplan
 reports/*.json
 reports/*.html

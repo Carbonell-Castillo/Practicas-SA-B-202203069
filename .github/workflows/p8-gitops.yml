@@ -173,7 +173,12 @@ jobs:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ matrix.service }}@${{ steps.build.outputs.digest }}
           format: spdx-json
           output-file: sbom-${{ matrix.service }}.spdx.json
+      # Kyverno 1.19 todavía no descubre de forma fiable las firmas
+      # Referrers-only producidas por Cosign 3 en GHCR. La rama 2.6 publica
+      # además el tag de firma OCI legacy que el admission controller valida.
       - uses: sigstore/cosign-installer@v4.1.2
+        with:
+          cosign-release: "v2.6.3"
       - name: Firma keyless de la imagen inmutable
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ matrix.service }}@${{ steps.build.outputs.digest }}

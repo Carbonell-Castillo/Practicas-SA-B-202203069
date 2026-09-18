@@ -2,7 +2,7 @@
 
 Entrega del carnet **202203069**. La plataforma evoluciona P5–P7 a un flujo donde el repositorio GitOps es la fuente de verdad, ArgoCD es el único reconciliador de aplicaciones y Argo Rollouts detiene automáticamente una versión que no supera sus análisis.
 
-> Estado: repositorios, pipeline, imágenes, SBOM, firma y Pull Request GitOps verificados. Los enlaces marcados **PENDIENTE** requieren disponer del clúster y ejecutar la demostración de ArgoCD/Rollouts.
+> Estado: infraestructura GKE, repositorios, pipeline, imágenes, SBOM, firma y Pull Request GitOps verificados. La demostración de ArgoCD/Rollouts se ejecuta sobre el clúster `sa-p8`.
 
 ## Tabla 4.1 — enlaces obligatorios
 
@@ -22,14 +22,14 @@ Entrega del carnet **202203069**. La plataforma evoluciona P5–P7 a un flujo do
 
 | Área | Implementación |
 | --- | --- |
-| Infraestructura | Terraform crea namespace, ResourceQuota, LimitRange, ServiceAccount, Role y RoleBinding. No instala la aplicación. |
-| Empaquetado | Ocho charts, uno por microservicio o tarea, con `values-dev.yaml` y `values-prod.yaml`. |
+| Infraestructura | Terraform crea la VPC, subred, clúster GKE Standard, node pool, namespaces, ResourceQuota, LimitRange y RBAC. No instala la aplicación. |
+| Empaquetado | Nueve charts: ocho workloads y la infraestructura de datos, con perfiles `dev` y `prod`. |
 | GitOps | Aplicación ArgoCD multi-source, sincronización automática, prune y self-heal; el pipeline solo abre un PR que cambia tags. |
 | Entrega progresiva | Cada chart usa Rollout canary con pesos 10 %, 25 %, 50 % y 100 %, pausas y AnalysisRun HTTP antes de avanzar. |
 | Calidad | Pruebas unitarias heredadas, smoke, integración y k6 con error < 1 %, p95 < 500 ms y checks > 99 %. |
 | Supply chain | Trivy bloqueante para severidad CRITICAL, SBOM SPDX, firma keyless por digest y política de verificación Kyverno. |
 | Políticas | Prohibición de etiqueta flotante, recursos obligatorios, ejecución no-root y firma válida. |
-| Secretos | External Secrets; el repositorio contiene referencias, nunca valores sensibles. |
+| Secretos | Sealed Secrets; el repositorio contiene únicamente ciphertext ligado al clúster, nunca valores sensibles en claro. |
 | Versionado | Las releases provienen de tags `vMAJOR.MINOR.PATCH`; no se publica una etiqueta flotante. |
 
 ## Estructura
