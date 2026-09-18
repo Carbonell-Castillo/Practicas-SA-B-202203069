@@ -2,7 +2,7 @@
 
 Pipeline completamente autocontenido: compila, prueba, valida los ocho Dockerfiles y despliega la plataforma en un clúster Kubernetes **Kind efímero dentro del runner de GitHub Actions**. No usa GCP, no necesita credenciales y no deja infraestructura ni costos al finalizar.
 
-El workflow está en `../.github/workflows/p7-ci-cd.yml` porque GitHub únicamente reconoce workflows dentro de `.github/workflows` en la raíz del repositorio.
+El workflow original se conserva en `evidence/p7-ci-cd.legacy.yml`. Al iniciar la Práctica 8 se retiró de `.github/workflows`, porque su despliegue directo a Kind es válido para P7 pero constituye un requisito eliminatorio en el modelo GitOps de P8.
 
 ## Ejecución
 

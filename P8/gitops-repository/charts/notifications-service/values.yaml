@@ -1,0 +1,24 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/carbonell-castillo/notifications-service
+  tag: "1.0.0"
+
+service:
+  port: 4004
+  targetPort: 4004
+
+health:
+  path: /api/health
+
+env:
+  LOG_LEVEL: info
+  PORT: "4004"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

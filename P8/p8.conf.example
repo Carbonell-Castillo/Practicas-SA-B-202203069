@@ -1,0 +1,8 @@
+CARNET="202203069"
+REPO_CODE="https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069"
+REPO_GITOPS="https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops"
+APP="sa-platform-prod"
+NS="sa-p8-prod"
+IMAGE="ghcr.io/carbonell-castillo/gateway:1.0.0"
+COSIGN_IDENTITY_REGEXP="https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/.*"
+COSIGN_ISSUER="https://token.actions.githubusercontent.com"

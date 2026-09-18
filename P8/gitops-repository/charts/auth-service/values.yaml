@@ -1,0 +1,26 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/carbonell-castillo/auth-service
+  tag: "1.0.0"
+
+service:
+  port: 4000
+  targetPort: 4000
+
+health:
+  path: /api/health
+
+env:
+  LOG_LEVEL: info
+  PORT: "4000"
+  FRONTEND_URL: http://frontend-stable:3000
+  AUTHORIZATION_SERVICE_URL: http://authorization-service-stable:4001/api
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

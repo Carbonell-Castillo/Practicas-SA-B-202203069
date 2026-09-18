@@ -1,0 +1,24 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/carbonell-castillo/frontend
+  tag: "1.0.0"
+
+service:
+  port: 3000
+  targetPort: 3000
+
+health:
+  path: /
+
+env:
+  LOG_LEVEL: info
+  NODE_ENV: production
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

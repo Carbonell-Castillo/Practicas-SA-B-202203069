@@ -9,6 +9,9 @@ COPY . .
 FROM node:24-alpine AS runtime
 WORKDIR /app
 
+ARG P8_INDUCED_FAILURE=false
+ENV P8_INDUCED_FAILURE=${P8_INDUCED_FAILURE}
+
 COPY --from=builder --chown=node:node /app .
 
 USER node

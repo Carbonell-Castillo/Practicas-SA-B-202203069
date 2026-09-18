@@ -1,0 +1,26 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-limits
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: cpu-and-memory
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [sa-p8-prod]
+      validate:
+        message: Todos los contenedores requieren requests y limits de CPU y memoria.
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  requests:
+                    cpu: "?*"
+                    memory: "?*"
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"

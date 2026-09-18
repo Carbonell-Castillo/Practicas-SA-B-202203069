@@ -1,0 +1,4 @@
+environment        = "prod"
+namespace          = "sa-p8-prod"
+kubeconfig_path    = null
+kubeconfig_context = null

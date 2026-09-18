@@ -1,0 +1,6 @@
+image:
+  tag: "1.0.0-dev.1"
+heartbeat:
+  schedule: "*/5 * * * *"
+summary:
+  schedule: "*/15 * * * *"

@@ -1,0 +1,26 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-non-root
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: pod-and-containers-nonroot
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [sa-p8-prod]
+      validate:
+        message: Los pods deben ejecutarse sin root ni escalamiento de privilegios.
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+            containers:
+              - securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL

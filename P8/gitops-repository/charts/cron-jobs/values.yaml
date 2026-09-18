@@ -1,0 +1,20 @@
+image:
+  repository: ghcr.io/carbonell-castillo/cron-jobs
+  tag: "1.0.0"
+
+heartbeat:
+  schedule: "*/2 * * * *"
+summary:
+  schedule: "*/10 * * * *"
+
+env:
+  LOG_LEVEL: log
+  STUDENT_CARNET: "202203069"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi

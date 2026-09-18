@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: sa-platform
+  namespace: argocd
+spec:
+  description: Práctica 8 - plataforma GitOps
+  sourceRepos:
+    - https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
+  destinations:
+    - namespace: sa-p8-prod
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: kyverno.io
+      kind: ClusterPolicy
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

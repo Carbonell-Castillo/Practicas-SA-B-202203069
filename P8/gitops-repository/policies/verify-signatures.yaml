@@ -1,0 +1,26 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-ghcr-signatures
+spec:
+  validationFailureAction: Enforce
+  webhookTimeoutSeconds: 30
+  failurePolicy: Fail
+  rules:
+    - name: verify-cosign-keyless
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [sa-p8-prod]
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/carbonell-castillo/*:*"
+          required: true
+          mutateDigest: true
+          verifyDigest: true
+          attestors:
+            - entries:
+                - keyless:
+                    subjectRegExp: "https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/.*"
+                    issuer: "https://token.actions.githubusercontent.com"

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: notifications-service
+description: Chart GitOps con entrega canary para notifications-service
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

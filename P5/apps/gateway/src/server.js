@@ -46,6 +46,13 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiDocument));
 
 // --- Healthcheck agregado: el gateway consulta a los 4 microservicios ---
 app.get('/health', async (_req, res) => {
+  // Interruptor controlado para la demostración de reversión de P8. La
+  // versión normal siempre lo deja en false; una release de prueba puede
+  // hornearlo en la imagen y comprobar que el canary se aborta solo.
+  if (process.env.P8_INDUCED_FAILURE === 'true') {
+    return res.status(503).json({ gateway: 'failed', induced: true });
+  }
+
   const checks = await Promise.all(
     services.map(async (service) => {
       try {

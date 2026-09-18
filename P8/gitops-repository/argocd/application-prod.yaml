@@ -1,0 +1,84 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sa-platform-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: sa-platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sa-p8-prod
+  sources:
+    - repoURL: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
+      targetRevision: main
+      path: charts/auth-service
+      helm:
+        releaseName: auth-service
+        valueFiles: [values-prod.yaml]
+    - repoURL: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
+      targetRevision: main
+      path: charts/authorization-service
+      helm:
+        releaseName: authorization-service
+        valueFiles: [values-prod.yaml]
+    - repoURL: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
+      targetRevision: main
+      path: charts/products-service
+      helm:
+        releaseName: products-service
+        valueFiles: [values-prod.yaml]
+    - repoURL: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
+      targetRevision: main
+      path: charts/orders-service
+      helm:
+        releaseName: orders-service
+        valueFiles: [values-prod.yaml]
+    - repoURL: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
+      targetRevision: main
+      path: charts/notifications-service
+      helm:
+        releaseName: notifications-service
+        valueFiles: [values-prod.yaml]
+    - repoURL: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
+      targetRevision: main
+      path: charts/gateway
+      helm:
+        releaseName: gateway
+        valueFiles: [values-prod.yaml]
+    - repoURL: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
+      targetRevision: main
+      path: charts/frontend
+      helm:
+        releaseName: frontend
+        valueFiles: [values-prod.yaml]
+    - repoURL: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
+      targetRevision: main
+      path: charts/cron-jobs
+      helm:
+        releaseName: cron-jobs
+        valueFiles: [values-prod.yaml]
+    - repoURL: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
+      targetRevision: main
+      path: manifests/prod
+      directory:
+        recurse: true
+    - repoURL: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git
+      targetRevision: main
+      path: policies
+      directory:
+        recurse: true
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

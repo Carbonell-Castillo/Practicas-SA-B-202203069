@@ -1,0 +1,53 @@
+{{- range $name, $job := dict "heartbeat" .Values.heartbeat "summary" .Values.summary }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-jobs-{{ $name }}
+  labels:
+    app.kubernetes.io/name: cron-jobs
+    app.kubernetes.io/component: {{ $name }}
+    app.kubernetes.io/part-of: sa-platform
+spec:
+  schedule: {{ $job.schedule | quote }}
+  timeZone: America/Guatemala
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 180
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: cron-jobs
+            app.kubernetes.io/component: {{ $name }}
+            app.kubernetes.io/part-of: sa-platform
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: {{ $name }}
+              image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+              args: [{{ $name | quote }}]
+              envFrom:
+                - secretRef:
+                    name: sa-platform-runtime
+                    optional: true
+              env:
+{{- range $key, $value := $.Values.env }}
+                - name: {{ $key }}
+                  value: {{ $value | quote }}
+{{- end }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+{{ toYaml $.Values.resources | indent 16 }}
+---
+{{- end }}

@@ -1,0 +1,26 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Prohibir latest
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-explicit-semver
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [sa-p8-prod]
+      validate:
+        message: Las imágenes deben utilizar una etiqueta semántica explícita y no latest.
+        foreach:
+          - list: request.object.spec.containers
+            deny:
+              conditions:
+                any:
+                  - key: "{{ regex_match('^.+:[0-9]+\\.[0-9]+\\.[0-9]+([-.][0-9A-Za-z.-]+)?(@sha256:[a-f0-9]{64})?$', element.image) }}"
+                    operator: Equals
+                    value: false

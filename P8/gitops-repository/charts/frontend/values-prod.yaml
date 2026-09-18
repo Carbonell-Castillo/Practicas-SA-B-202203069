@@ -1,0 +1,12 @@
+replicaCount: 3
+image:
+  tag: "0.9.0"
+env:
+  LOG_LEVEL: warn
+resources:
+  requests:
+    cpu: 150m
+    memory: 192Mi
+  limits:
+    cpu: 750m
+    memory: 512Mi

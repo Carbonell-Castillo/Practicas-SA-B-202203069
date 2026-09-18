@@ -1,0 +1,34 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/carbonell-castillo/gateway
+  tag: "1.0.0"
+
+service:
+  port: 8080
+  targetPort: 8080
+
+health:
+  path: /health
+
+ingress:
+  enabled: false
+  className: nginx
+  host: app.example.com
+
+env:
+  LOG_LEVEL: info
+  PORT: "8080"
+  FRONTEND_URL: http://frontend-stable:3000
+  AUTH_SERVICE_URL: http://auth-service-stable:4000
+  AUTHORIZATION_SERVICE_URL: http://authorization-service-stable:4001
+  PRODUCTS_SERVICE_URL: http://products-service-stable:4002
+  ORDERS_SERVICE_URL: http://orders-service-stable:4003
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
