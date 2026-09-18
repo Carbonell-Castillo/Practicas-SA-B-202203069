@@ -2,7 +2,7 @@ locals {
   labels = {
     "app.kubernetes.io/part-of"    = "sa-platform"
     "app.kubernetes.io/managed-by" = "terraform"
-    environment                     = var.environment
+    environment                    = var.environment
   }
 }
 
@@ -24,7 +24,7 @@ resource "kubernetes_resource_quota_v1" "platform" {
       "requests.memory" = "6Gi"
       "limits.cpu"      = "8"
       "limits.memory"   = "12Gi"
-      pods               = "40"
+      pods              = "40"
     }
   }
 }
