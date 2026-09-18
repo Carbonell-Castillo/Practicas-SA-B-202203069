@@ -2,18 +2,18 @@
 
 Entrega del carnet **202203069**. La plataforma evoluciona P5–P7 a un flujo donde el repositorio GitOps es la fuente de verdad, ArgoCD es el único reconciliador de aplicaciones y Argo Rollouts detiene automáticamente una versión que no supera sus análisis.
 
-> Estado: la implementación local está completa. Los enlaces marcados **PENDIENTE** requieren publicar el segundo repositorio, disponer del clúster y ejecutar la demostración; no se inventaron URLs ni evidencias.
+> Estado: repositorios, pipeline, imágenes, SBOM, firma y Pull Request GitOps verificados. Los enlaces marcados **PENDIENTE** requieren disponer del clúster y ejecutar la demostración de ArgoCD/Rollouts.
 
 ## Tabla 4.1 — enlaces obligatorios
 
 | Ítem | Enlace o dato requerido |
 | --- | --- |
-| Repositorio GitOps | [Practicas-SA-B-202203069-gitops](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops) — **PENDIENTE de publicar** |
+| Repositorio GitOps | [Practicas-SA-B-202203069-gitops](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops) |
 | Aplicación en ArgoCD | `sa-platform-prod`, namespace de ArgoCD `argocd`, destino `sa-p8-prod` |
-| Ejecución exitosa del pipeline | [Workflow P8](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/workflows/p8-gitops.yml) — **PENDIENTE reemplazar por URL directa del run** |
+| Ejecución exitosa del pipeline | [Run 35293031535](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35293031535) |
 | Reversión automática | [Runs del workflow](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/workflows/p8-gitops.yml) y Rollout `gateway` en `sa-p8-prod` — **PENDIENTE URL directa** |
 | Despliegue rechazado por política | Política `disallow-latest-tag` — **PENDIENTE URL directa a evidencia** |
-| Bloqueo por vulnerabilidad crítica | Job `Trivy bloquea CVE críticas` — **PENDIENTE URL directa al PR/run bloqueado** |
+| Bloqueo por vulnerabilidad crítica | [Run bloqueado 35292544355](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35292544355), antes de corregir `perl-base` y Next.js |
 | Imagen firmada | `ghcr.io/carbonell-castillo/gateway:1.0.0` |
 | Reporte de prueba de carga | `P8/evidence/k6-summary.json` — se genera con el comando documentado en `evidence/README.md` |
 | Video demostrativo | **PENDIENTE URL**; 00:00 arquitectura, 01:00 pipeline, 02:30 firma/SBOM, 03:30 ArgoCD, 04:30 canary, 06:00 rollback, 07:00 políticas |

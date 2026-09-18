@@ -1,0 +1,12 @@
+Imagen: ghcr.io/carbonell-castillo/gateway:1.0.0
+Digest verificado: sha256:a6fb962d3c547e3f4f1a2a016ebdbb0b2c764f73029426f0b561cca22f5a5dd9
+Issuer: https://token.actions.githubusercontent.com
+Identidad: https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/.github/workflows/p8-gitops.yml@refs/tags/v1.0.0
+
+Resultado de cosign verify:
+- claims de Cosign válidos;
+- existencia en transparency log verificada;
+- certificado de firma verificado contra autoridades confiables.
+
+Comando reproducible:
+cosign verify ghcr.io/carbonell-castillo/gateway:1.0.0 --certificate-identity-regexp 'https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/.*' --certificate-oidc-issuer 'https://token.actions.githubusercontent.com'
