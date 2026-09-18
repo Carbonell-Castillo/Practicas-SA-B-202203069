@@ -1,0 +1,166 @@
+﻿apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  annotations:
+    argocd.argoproj.io/tracking-id: sa-platform-prod:argoproj.io/Rollout:sa-p8-prod/gateway
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"argoproj.io/v1alpha1","kind":"Rollout","metadata":{"annotations":{"argocd.argoproj.io/tracking-id":"sa-platform-prod:argoproj.io/Rollout:sa-p8-prod/gateway"},"labels":{"app.kubernetes.io/name":"gateway","app.kubernetes.io/part-of":"sa-platform"},"name":"gateway","namespace":"sa-p8-prod"},"spec":{"replicas":2,"revisionHistoryLimit":3,"selector":{"matchLabels":{"app.kubernetes.io/name":"gateway"}},"strategy":{"canary":{"canaryService":"gateway-canary","maxSurge":"25%","maxUnavailable":1,"stableService":"gateway-stable","steps":[{"setWeight":10},{"analysis":{"templates":[{"templateName":"gateway-health"}]}},{"pause":{"duration":"30s"}},{"setWeight":25},{"analysis":{"templates":[{"templateName":"gateway-health"}]}},{"pause":{"duration":"60s"}},{"setWeight":50},{"analysis":{"templates":[{"templateName":"gateway-health"}]}},{"pause":{"duration":"120s"}},{"setWeight":100}]}},"template":{"metadata":{"labels":{"app.kubernetes.io/name":"gateway","app.kubernetes.io/part-of":"sa-platform"}},"spec":{"automountServiceAccountToken":false,"containers":[{"env":[{"name":"AUTHORIZATION_SERVICE_URL","value":"http://authorization-service-stable:4001"},{"name":"AUTH_SERVICE_URL","value":"http://auth-service-stable:4000"},{"name":"FRONTEND_URL","value":"http://frontend-stable:3000"},{"name":"LOG_LEVEL","value":"warn"},{"name":"ORDERS_SERVICE_URL","value":"http://orders-service-stable:4003"},{"name":"PORT","value":"8080"},{"name":"PRODUCTS_SERVICE_URL","value":"http://products-service-stable:4002"}],"envFrom":[{"secretRef":{"name":"sa-platform-runtime","optional":true}}],"image":"ghcr.io/carbonell-castillo/gateway:1.0.3","imagePullPolicy":"IfNotPresent","livenessProbe":{"httpGet":{"path":"/","port":"http"},"initialDelaySeconds":30,"periodSeconds":10},"name":"gateway","ports":[{"containerPort":8080,"name":"http"}],"readinessProbe":{"httpGet":{"path":"/","port":"http"},"initialDelaySeconds":10,"periodSeconds":5},"resources":{"limits":{"cpu":"750m","memory":"512Mi"},"requests":{"cpu":"150m","memory":"192Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":false}}],"securityContext":{"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000,"seccompProfile":{"type":"RuntimeDefault"}},"serviceAccountName":"gateway"}}}}
+    rollout.argoproj.io/revision: "8"
+  creationTimestamp: "2026-09-18T01:42:50Z"
+  generation: 9
+  labels:
+    app.kubernetes.io/name: gateway
+    app.kubernetes.io/part-of: sa-platform
+  name: gateway
+  namespace: sa-p8-prod
+  resourceVersion: "1789710973398079015"
+  uid: 25c27fa5-ccff-4620-b632-327e04324582
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gateway
+  strategy:
+    canary:
+      canaryService: gateway-canary
+      maxSurge: 25%
+      maxUnavailable: 1
+      stableService: gateway-stable
+      steps:
+      - setWeight: 10
+      - analysis:
+          templates:
+          - templateName: gateway-health
+      - pause:
+          duration: 30s
+      - setWeight: 25
+      - analysis:
+          templates:
+          - templateName: gateway-health
+      - pause:
+          duration: 60s
+      - setWeight: 50
+      - analysis:
+          templates:
+          - templateName: gateway-health
+      - pause:
+          duration: 120s
+      - setWeight: 100
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gateway
+        app.kubernetes.io/part-of: sa-platform
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - env:
+        - name: AUTHORIZATION_SERVICE_URL
+          value: http://authorization-service-stable:4001
+        - name: AUTH_SERVICE_URL
+          value: http://auth-service-stable:4000
+        - name: FRONTEND_URL
+          value: http://frontend-stable:3000
+        - name: LOG_LEVEL
+          value: warn
+        - name: ORDERS_SERVICE_URL
+          value: http://orders-service-stable:4003
+        - name: PORT
+          value: "8080"
+        - name: PRODUCTS_SERVICE_URL
+          value: http://products-service-stable:4002
+        envFrom:
+        - secretRef:
+            name: sa-platform-runtime
+            optional: true
+        image: ghcr.io/carbonell-castillo/gateway:1.0.3
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        name: gateway
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 750m
+            memory: 512Mi
+          requests:
+            cpu: 150m
+            memory: 192Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: false
+      securityContext:
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: gateway
+status:
+  HPAReplicas: 2
+  abort: true
+  abortedAt: "2026-09-18T05:56:13Z"
+  availableReplicas: 2
+  blueGreen: {}
+  canary: {}
+  conditions:
+  - lastTransitionTime: "2026-09-18T05:50:10Z"
+    lastUpdateTime: "2026-09-18T05:50:10Z"
+    message: Rollout is paused
+    reason: RolloutPaused
+    status: "False"
+    type: Paused
+  - lastTransitionTime: "2026-09-18T05:50:23Z"
+    lastUpdateTime: "2026-09-18T05:50:23Z"
+    message: Rollout has minimum availability
+    reason: AvailableReason
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2026-09-18T05:53:59Z"
+    lastUpdateTime: "2026-09-18T05:53:59Z"
+    message: Rollout is not healthy
+    reason: RolloutHealthy
+    status: "False"
+    type: Healthy
+  - lastTransitionTime: "2026-09-18T05:53:59Z"
+    lastUpdateTime: "2026-09-18T05:53:59Z"
+    message: RolloutCompleted
+    reason: RolloutCompleted
+    status: "False"
+    type: Completed
+  - lastTransitionTime: "2026-09-18T05:56:13Z"
+    lastUpdateTime: "2026-09-18T05:56:13Z"
+    message: 'Rollout aborted update to revision 8: Step-based analysis phase error/failed:
+      Metric "smoke-http" assessed Failed due to failed (2) > failureLimit (1)'
+    reason: RolloutAborted
+    status: "False"
+    type: Progressing
+  currentPodHash: 68b7cb79c4
+  currentStepHash: 65578866b5
+  currentStepIndex: 0
+  message: 'RolloutAborted: Rollout aborted update to revision 8: Step-based analysis
+    phase error/failed: Metric "smoke-http" assessed Failed due to failed (2) > failureLimit
+    (1)'
+  observedGeneration: "9"
+  phase: Degraded
+  readyReplicas: 2
+  replicas: 2
+  selector: app.kubernetes.io/name=gateway
+  stableRS: 5fb578b85c

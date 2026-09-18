@@ -1,0 +1,109 @@
+﻿apiVersion: argoproj.io/v1alpha1
+kind: AnalysisRun
+metadata:
+  annotations:
+    rollout.argoproj.io/revision: "8"
+  creationTimestamp: "2026-09-18T05:54:14Z"
+  generation: 33
+  labels:
+    app.kubernetes.io/name: gateway
+    rollout-type: Step
+    rollouts-pod-template-hash: 68b7cb79c4
+    step-index: "1"
+  name: gateway-68b7cb79c4-8-1
+  namespace: sa-p8-prod
+  ownerReferences:
+  - apiVersion: argoproj.io/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Rollout
+    name: gateway
+    uid: 25c27fa5-ccff-4620-b632-327e04324582
+  resourceVersion: "1789710973033103005"
+  uid: c0cc6432-61ef-4c6d-bb00-3341f54a38ed
+spec:
+  metrics:
+  - count: 3
+    failureLimit: 1
+    interval: 10s
+    name: smoke-http
+    provider:
+      job:
+        metadata: {}
+        spec:
+          backoffLimit: 0
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/part-of: sa-platform
+            spec:
+              automountServiceAccountToken: false
+              containers:
+              - args:
+                - |
+                  for attempt in $(seq 1 15); do
+                    curl --fail --silent --show-error --max-time 5 http://gateway-canary.sa-p8-prod.svc.cluster.local:8080/ready >/dev/null && exit 0
+                    sleep 2
+                  done
+                  exit 1
+                command:
+                - sh
+                - -ec
+                image: curlimages/curl:8.12.1
+                name: smoke
+                resources:
+                  limits:
+                    cpu: 50m
+                    memory: 32Mi
+                  requests:
+                    cpu: 10m
+                    memory: 16Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+              restartPolicy: Never
+              securityContext:
+                runAsGroup: 1000
+                runAsNonRoot: true
+                runAsUser: 1000
+                seccompProfile:
+                  type: RuntimeDefault
+status:
+  completedAt: "2026-09-18T05:56:13Z"
+  dryRunSummary: {}
+  message: Metric "smoke-http" assessed Failed due to failed (2) > failureLimit (1)
+  metricResults:
+  - count: 3
+    failed: 2
+    measurements:
+    - finishedAt: "2026-09-18T05:54:23Z"
+      metadata:
+        job-name: c0cc6432-61ef-4c6d-bb00-3341f54a38ed.smoke-http.1
+        job-namespace: sa-p8-prod
+      phase: Successful
+      resumeAt: "2026-09-18T05:54:23Z"
+      startedAt: "2026-09-18T05:54:14Z"
+    - finishedAt: "2026-09-18T05:55:18Z"
+      metadata:
+        job-name: c0cc6432-61ef-4c6d-bb00-3341f54a38ed.smoke-http.2
+        job-namespace: sa-p8-prod
+      phase: Failed
+      resumeAt: "2026-09-18T05:55:18Z"
+      startedAt: "2026-09-18T05:54:33Z"
+    - finishedAt: "2026-09-18T05:56:13Z"
+      metadata:
+        job-name: c0cc6432-61ef-4c6d-bb00-3341f54a38ed.smoke-http.3
+        job-namespace: sa-p8-prod
+      phase: Failed
+      resumeAt: "2026-09-18T05:56:13Z"
+      startedAt: "2026-09-18T05:55:28Z"
+    name: smoke-http
+    phase: Failed
+    successful: 1
+  phase: Failed
+  runSummary:
+    count: 1
+    failed: 1
+  startedAt: "2026-09-18T05:54:15Z"

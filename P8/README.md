@@ -2,7 +2,7 @@
 
 Entrega del carnet **202203069**. La plataforma evoluciona P5–P7 a un flujo donde el repositorio GitOps es la fuente de verdad, ArgoCD es el único reconciliador de aplicaciones y Argo Rollouts detiene automáticamente una versión que no supera sus análisis.
 
-> Estado: infraestructura GKE, repositorios, pipeline, imágenes, SBOM, firma y Pull Request GitOps verificados. La demostración de ArgoCD/Rollouts se ejecuta sobre el clúster `sa-p8`.
+> Estado: infraestructura GKE, repositorios, pipeline, imágenes, SBOM, firma, GitOps y reversión verificados. El script oficial obtuvo **60/60** sobre el clúster `sa-p8`.
 
 ## Tabla 4.1 — enlaces obligatorios
 
@@ -10,12 +10,13 @@ Entrega del carnet **202203069**. La plataforma evoluciona P5–P7 a un flujo do
 | --- | --- |
 | Repositorio GitOps | [Practicas-SA-B-202203069-gitops](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops) |
 | Aplicación en ArgoCD | `sa-platform-prod`, namespace de ArgoCD `argocd`, destino `sa-p8-prod` |
-| Ejecución exitosa del pipeline | [Run 35293031535](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35293031535) |
-| Reversión automática | [Runs del workflow](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/workflows/p8-gitops.yml) y Rollout `gateway` en `sa-p8-prod` — **PENDIENTE URL directa** |
-| Despliegue rechazado por política | Política `disallow-latest-tag` — **PENDIENTE URL directa a evidencia** |
+| Ejecución exitosa del pipeline | [Release 1.0.2 · Run 35310455381](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35310455381) |
+| Reversión automática | [Release fallida 1.0.3 · Run 35312427008](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35312427008), [PR GitOps #4](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops/pull/4) y [AnalysisRun fallido](evidence/analysisrun-failed-1.0.3.yaml) |
+| Despliegue rechazado por política | [Salida real de Kyverno](evidence/kyverno-rejection.txt) para `busybox:latest` |
 | Bloqueo por vulnerabilidad crítica | [Run bloqueado 35292544355](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35292544355), antes de corregir `perl-base` y Next.js |
-| Imagen firmada | `ghcr.io/carbonell-castillo/gateway:1.0.0` |
-| Reporte de prueba de carga | `P8/evidence/k6-summary.json` — se genera con el comando documentado en `evidence/README.md` |
+| Imagen firmada | `ghcr.io/carbonell-castillo/gateway:1.0.2` y [salida de Cosign](evidence/cosign-verify.txt) |
+| Reporte de prueba de carga | [Resumen JSON](evidence/k6-summary.json) y [salida de consola](evidence/k6-console.txt) |
+| Verificador oficial | [Reporte 60/60](evidence/reporte_p8_202203069.txt) y [resultado CSV](evidence/resultados_p8.csv) |
 | Video demostrativo | **PENDIENTE URL**; 00:00 arquitectura, 01:00 pipeline, 02:30 firma/SBOM, 03:30 ArgoCD, 04:30 canary, 06:00 rollback, 07:00 políticas |
 
 ## Componentes implementados

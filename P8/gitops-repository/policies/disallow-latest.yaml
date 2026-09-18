@@ -16,7 +16,11 @@ spec:
               namespaces: [sa-p8-prod]
       validate:
         message: Las imágenes no pueden utilizar la etiqueta latest.
-        pattern:
-          spec:
-            containers:
-              - image: "!*:latest"
+        foreach:
+          - list: request.object.spec.containers
+            deny:
+              conditions:
+                any:
+                  - key: "{{ ends_with(element.image, ':latest') }}"
+                    operator: Equals
+                    value: true

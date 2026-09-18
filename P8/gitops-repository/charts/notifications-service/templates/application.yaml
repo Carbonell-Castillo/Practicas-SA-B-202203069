@@ -87,6 +87,9 @@ spec:
               - templateName: {{ $name }}-health
         - pause: {duration: 120s}
         - setWeight: 100
+        - analysis:
+            templates:
+              - templateName: {{ $name }}-health
   template:
     metadata:
       labels:
