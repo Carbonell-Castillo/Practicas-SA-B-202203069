@@ -164,6 +164,8 @@ jobs:
           severity: CRITICAL
           ignore-unfixed: true
           exit-code: "1"
+          limit-severities-for-sarif: true
+          scanners: vuln
       - name: Generar SBOM SPDX
         uses: anchore/sbom-action@v0.24.2
         with:
