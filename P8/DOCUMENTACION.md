@@ -444,22 +444,3 @@ Get-Content ".\resultados_p8.csv"
 ## 16. Video demostrativo
 
 [Abrir video demostrativo en Google Drive](https://drive.google.com/file/d/1FgsHZm2ZFiyrdckXfZQlhW70AdzkExXO/view?usp=sharing)
-
-## 17. Lista final de entrega
-
-- [x] Carpeta `/P8` con workflow, Terraform, charts, pruebas y documentación.
-- [x] Repositorio GitOps público e independiente.
-- [x] Terraform con plan y estado aplicado.
-- [x] Charts con valores `dev` y `prod`.
-- [x] ArgoCD como reconciliador exclusivo.
-- [x] Argo Rollouts con cuatro pesos y análisis.
-- [x] Evidencia de reversión automática.
-- [x] Trivy, SBOM, Cosign, Kyverno y Sealed Secrets.
-- [x] Pruebas de humo, integración y carga con reporte.
-- [x] Informe de incidente con cinco campos.
-- [x] Diagrama del flujo GitOps.
-- [x] Verificador oficial 60/60.
-- [x] Capturas de evidencia.
-- [x] URL del video de 5 a 8 minutos.
-- [ ] Conservar evidencia de un PR bloqueado por Trivy para cumplimiento literal.
-- [ ] Versionar una copia permanente del SBOM y reporte Trivy recomendado.
