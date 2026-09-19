@@ -17,7 +17,7 @@ Entrega del carnet **202203069**. La plataforma evoluciona P5–P7 a un flujo do
 | Imagen firmada | `ghcr.io/carbonell-castillo/gateway:1.0.2` y [salida de Cosign](evidence/cosign-verify.txt) |
 | Reporte de prueba de carga | [Resumen JSON](evidence/k6-summary.json) y [salida de consola](evidence/k6-console.txt) |
 | Verificador oficial | [Reporte 60/60](evidence/reporte_p8_202203069.txt) y [resultado CSV](evidence/resultados_p8.csv) |
-| Video demostrativo | **PENDIENTE URL**; 00:00 arquitectura, 01:00 pipeline, 02:30 firma/SBOM, 03:30 ArgoCD, 04:30 canary, 06:00 rollback, 07:00 políticas |
+| Video demostrativo | [Google Drive](https://drive.google.com/file/d/1FgsHZm2ZFiyrdckXfZQlhW70AdzkExXO/view?usp=sharing) |
 
 ## Componentes implementados
 

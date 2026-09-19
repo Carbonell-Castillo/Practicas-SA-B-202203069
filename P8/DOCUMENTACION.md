@@ -40,7 +40,7 @@ Estado verificado:
 | Imagen firmada | `ghcr.io/carbonell-castillo/gateway:1.0.2` y [verificación Cosign](evidence/cosign-verify.txt) |
 | Reporte de prueba de carga | [Resumen JSON](evidence/k6-summary.json) y [salida de consola](evidence/k6-console.txt) |
 | Verificador oficial | [Reporte 60/60](evidence/reporte_p8_202203069.txt) y [CSV](evidence/resultados_p8.csv) |
-| Video demostrativo | **PENDIENTE: colocar URL pública o no listada y conservar el minutaje de la sección 14** |
+| Video demostrativo | [Video en Google Drive](https://drive.google.com/file/d/1FgsHZm2ZFiyrdckXfZQlhW70AdzkExXO/view?usp=sharing) |
 
 > Atención: el enlace de vulnerabilidad demuestra un bloqueo real de Trivy sobre una ejecución de tag. Para cumplir literalmente el texto “Pull Request bloqueado”, debe conservarse además un PR cuya validación de Trivy falle.
 
@@ -222,121 +222,95 @@ Guardar las imágenes dentro de `P8/evidence/capturas/` con los nombres sugerido
 
 Debe verse `Plan: 17 to add, 0 to change, 0 to destroy`.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/01-terraform-plan.png`
-
-<!-- ![Terraform plan](evidence/capturas/01-terraform-plan.png) -->
+![Terraform plan con 17 recursos por crear](evidence/capturas/01-terraform-plan.png)
 
 ### Captura 02 — Clúster GKE
 
 En GCP: **Kubernetes Engine → Clusters → sa-p8**. Deben verse nombre, zona `us-central1-a` y estado `RUNNING`.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/02-gke-sa-p8.png`
-
-<!-- ![Clúster GKE sa-p8](evidence/capturas/02-gke-sa-p8.png) -->
+![Clúster GKE sa-p8 en estado Running](evidence/capturas/02-gke-sa-p8.png)
 
 ### Captura 03 — Pipeline exitoso
 
 Abrir el [run 35398601069](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35398601069). Debe verse el grafo completo en verde.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/03-pipeline-exitoso.png`
-
-<!-- ![Pipeline exitoso](evidence/capturas/03-pipeline-exitoso.png) -->
+![Pipeline exitoso de la versión 1.0.4](evidence/capturas/03-pipeline-exitoso.png)
 
 ### Captura 04 — Terraform y Helm en CI
 
 Dentro del run, abrir `Calidad, Terraform y Helm`. Deben verse `terraform validate`, `helm lint` y `helm template` exitosos.
-
-> **CAPTURA PENDIENTE:** `evidence/capturas/04-terraform-helm-ci.png`
-
-<!-- ![Terraform y Helm en CI](evidence/capturas/04-terraform-helm-ci.png) -->
+![Validación de Terraform y Helm en GitHub Actions](evidence/capturas/04-terraform-helm-ci.png)
 
 ### Captura 05 — Trivy, SBOM y Cosign
 
 Abrir un job `Escanear, publicar, SBOM y firmar`. Deben verse en verde Trivy, generación de SBOM y firma keyless.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/05-supply-chain.png`
-
-<!-- ![Trivy SBOM y Cosign](evidence/capturas/05-supply-chain.png) -->
+![Trivy, SBOM y firma Cosign exitosos](evidence/capturas/05-supply-chain.png)
 
 ### Captura 06 — PR GitOps
 
 Abrir [PR GitOps #6](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops/pull/6/files). Debe verse `Merged` y que el cambio se limita a tags declarativos.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/06-pr-gitops.png`
-
-<!-- ![Pull Request GitOps](evidence/capturas/06-pr-gitops.png) -->
+![Pull Request GitOps de la versión 1.0.4 fusionado](evidence/capturas/06-pr-gitops.png)
 
 ### Captura 07 — ArgoCD Synced y Healthy
 
 Abrir `sa-platform-prod` en ArgoCD. Deben verse `Synced`, `Healthy`, la rama/revisión y el namespace `sa-p8-prod`.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/07-argocd-synced-healthy.png`
-
-<!-- ![ArgoCD Synced y Healthy](evidence/capturas/07-argocd-synced-healthy.png) -->
+![Aplicación ArgoCD Synced y Healthy](evidence/capturas/07-argocd-synced-healthy.png)
 
 ### Captura 08 — Historial de ArgoCD
 
 En la aplicación, abrir **History and Rollback** y mostrar las sincronizaciones registradas.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/08-argocd-history.png`
-
-<!-- ![Historial ArgoCD](evidence/capturas/08-argocd-history.png) -->
+![Historial de sincronización automática en ArgoCD](evidence/capturas/08-argocd-history.png)
 
 ### Captura 09 — Promoción canary exitosa
 
 En Rollouts Dashboard o CLI, mostrar gateway `Healthy`, `Step 11/11`, `SetWeight 100`, imagen `1.0.4` y AnalysisRuns exitosos.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/09-rollout-promocion.png`
-
-<!-- ![Promoción canary exitosa](evidence/capturas/09-rollout-promocion.png) -->
+![Gateway saludable y promovido al cien por ciento](evidence/capturas/09-rollout-promocion.png)
 
 ### Captura 10 — Reversión automática
 
 Mostrar la revisión 8 de gateway, `gateway-68b7cb79c4-8-1` en `Failed` y el ReplicaSet defectuoso escalado.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/10-rollout-reversion.png`
-
-<!-- ![Reversión automática](evidence/capturas/10-rollout-reversion.png) -->
+![Revisión defectuosa con AnalysisRun fallido](evidence/capturas/10-rollout-reversion.png)
 
 ### Captura 11 — Políticas Kyverno y rechazo
 
 Mostrar las cuatro ClusterPolicies y la salida de rechazo para `busybox:latest`.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/11-kyverno.png`
+![Cuatro políticas Kyverno activas](evidence/capturas/11-kyverno.png)
 
-<!-- ![Políticas y rechazo Kyverno](evidence/capturas/11-kyverno.png) -->
 
 ### Captura 12 — Sealed Secrets
 
 Mostrar el recurso sincronizado en ArgoCD o el manifiesto con `encryptedData`. No mostrar secretos decodificados.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/12-sealed-secrets.png`
+![Manifiesto Sealed Secrets en el repositorio GitOps](evidence/capturas/12a-sealed-secrets-repository.png)
 
-<!-- ![Sealed Secrets](evidence/capturas/12-sealed-secrets.png) -->
+![Datos cifrados dentro de los Sealed Secrets](evidence/capturas/12b-sealed-secrets-encrypted-data.png)
 
 ### Captura 13 — Prueba k6
 
 Mostrar los tres thresholds exitosos, 0 % de errores, p95 y checks al 100 %.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/13-k6.png`
-
-<!-- ![Prueba de carga k6](evidence/capturas/13-k6.png) -->
+![Resultados exitosos de la prueba de carga k6](evidence/capturas/13-k6.png)
 
 ### Captura 14 — Endpoint saludable
 
 Abrir `http://34.42.133.51/health`. Debe verse `allServicesUp: true` y los servicios saludables.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/14-health.png`
-
-<!-- ![Endpoint saludable](evidence/capturas/14-health.png) -->
+![Endpoint público con todos los servicios saludables](evidence/capturas/14-health.png)
 
 ### Captura 15 — Verificador 60/60
 
 Ejecutar el script oficial siguiendo la sección 15. Debe verse el resumen completo, `CONOCIMIENTO 60/60` y “Requisitos eliminatorios: todos cumplidos”.
 
-> **CAPTURA PENDIENTE:** `evidence/capturas/15-verificador-60.png`
+![Contexto y herramientas del verificador oficial](evidence/capturas/15a-verificador-contexto.png)
 
-<!-- ![Verificador oficial 60 de 60](evidence/capturas/15-verificador-60.png) -->
+![Resultado final del verificador con 60 de 60](evidence/capturas/15b-verificador-60.png)
 
 ## 14. Acceso a ArgoCD y Argo Rollouts
 
@@ -469,39 +443,9 @@ Get-Content ".\resultados_p8.csv"
 
 ## 16. Video demostrativo
 
-Duración requerida: 5 a 8 minutos.
+[Abrir video demostrativo en Google Drive](https://drive.google.com/file/d/1FgsHZm2ZFiyrdckXfZQlhW70AdzkExXO/view?usp=sharing)
 
-| Tiempo | Evidencia |
-| --- | --- |
-| 00:00 | Arquitectura y separación de repositorios |
-| 00:45 | Pipeline, Trivy, SBOM, Cosign y PR GitOps |
-| 02:00 | ArgoCD `Synced/Healthy` |
-| 02:45 | Promoción 10 → 25 → 50 → 100 |
-| 04:00 | AnalysisRun fallido y reversión automática |
-| 05:15 | Kyverno y Sealed Secrets |
-| 06:15 | k6, endpoint saludable y verificador 60/60 |
-
-Después de subirlo, reemplazar el valor pendiente en esta documentación y en `P8/README.md`.
-
-## 17. Preguntas teóricas posibles
-
-**¿Por qué ArgoCD es el único componente que despliega?** Porque mantiene el clúster reconciliado con la fuente de verdad y evita cambios imperativos no auditables desde el pipeline.
-
-**¿Por qué el pipeline abre un PR en lugar de modificar directamente el clúster?** El PR agrega revisión, historial y separación de responsabilidades. El pipeline produce artefactos; ArgoCD aplica el estado aprobado.
-
-**¿Qué diferencia existe entre rollback y abort de un canary?** El abort detiene la revisión candidata y conserva la estable. Después puede restaurarse declarativamente el tag deseado mediante Git para que repositorio y clúster vuelvan a coincidir.
-
-**¿Por qué no usar `latest`?** Es mutable y rompe trazabilidad. Una etiqueta semántica permite relacionar código, imagen, firma, SBOM, PR y despliegue.
-
-**¿Qué protege Cosign?** Demuestra la identidad del workflow que firmó un digest concreto. Kyverno evita admitir imágenes que no tengan una firma válida de esa identidad.
-
-**¿Qué aporta el SBOM?** Permite conocer componentes y versiones presentes en cada imagen, facilitando auditoría y respuesta a vulnerabilidades.
-
-**¿Qué sucede si se modifica manualmente un recurso?** ArgoCD detecta drift y `selfHeal` restaura el estado declarado.
-
-**¿Por qué el canary reduce riesgo?** Expone inicialmente una fracción limitada del tráfico y condiciona el avance a análisis automáticos.
-
-## 18. Lista final de entrega
+## 17. Lista final de entrega
 
 - [x] Carpeta `/P8` con workflow, Terraform, charts, pruebas y documentación.
 - [x] Repositorio GitOps público e independiente.
@@ -515,7 +459,7 @@ Después de subirlo, reemplazar el valor pendiente en esta documentación y en `
 - [x] Informe de incidente con cinco campos.
 - [x] Diagrama del flujo GitOps.
 - [x] Verificador oficial 60/60.
-- [ ] Colocar las capturas de la sección 13.
-- [ ] Agregar URL del video de 5 a 8 minutos.
+- [x] Capturas de evidencia.
+- [x] URL del video de 5 a 8 minutos.
 - [ ] Conservar evidencia de un PR bloqueado por Trivy para cumplimiento literal.
 - [ ] Versionar una copia permanente del SBOM y reporte Trivy recomendado.

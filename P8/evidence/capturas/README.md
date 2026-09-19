@@ -14,10 +14,12 @@ Guardar aquí las capturas enumeradas en `P8/DOCUMENTACION.md`:
 09-rollout-promocion.png
 10-rollout-reversion.png
 11-kyverno.png
-12-sealed-secrets.png
+12a-sealed-secrets-repository.png
+12b-sealed-secrets-encrypted-data.png
 13-k6.png
 14-health.png
-15-verificador-60.png
+15a-verificador-contexto.png
+15b-verificador-60.png
 ```
 
 No guardar contraseñas, tokens, kubeconfig ni secretos decodificados en las imágenes.
