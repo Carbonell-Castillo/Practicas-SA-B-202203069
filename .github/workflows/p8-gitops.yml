@@ -114,6 +114,49 @@ jobs:
           cache-dependency-path: P5/apps/products-service/requirements.txt
       - run: bash P7/scripts/test-service.sh "${{ matrix.service }}"
 
+  trivy-pr:
+    name: Trivy bloquea PR · ${{ matrix.service }}
+    needs: [version, quality, unit-tests]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-service
+          - authorization-service
+          - products-service
+          - orders-service
+          - notifications-service
+          - gateway
+          - frontend
+          - cron-jobs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Construir imagen efímera sin publicarla
+        uses: docker/build-push-action@v6
+        with:
+          context: P5/apps/${{ matrix.service }}
+          load: true
+          push: false
+          pull: true
+          tags: local/p8-${{ matrix.service }}:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=/api
+            NEXT_PUBLIC_GATEWAY_URL=/
+          cache-from: type=gha,scope=p8-${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=p8-${{ matrix.service }}
+      - name: Bloquear CVE críticas antes de fusionar
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: local/p8-${{ matrix.service }}:${{ github.sha }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          scanners: vuln
+
   publish:
     name: Escanear, publicar, SBOM y firmar · ${{ matrix.service }}
     needs: [version, quality, unit-tests]
