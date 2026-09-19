@@ -1,12 +1,12 @@
 # Documentación consolidada — Práctica 8
 
-**Curso:** Software Avanzado  
-**Carnet:** 202203069  
-**Tema:** GitOps, entrega progresiva y seguridad de la cadena de suministro  
-**Clúster:** `sa-p8`  
-**Proyecto GCP:** `softwareavanzado-507703`  
-**Aplicación ArgoCD:** `sa-platform-prod`  
-**Namespace de trabajo:** `sa-p8-prod`
+- **Curso:** Software Avanzado
+- **Carnet:** 202203069
+- **Tema:** GitOps, entrega progresiva y seguridad de la cadena de suministro
+- **Clúster:** `sa-p8`
+- **Proyecto GCP:** `softwareavanzado-507703`
+- **Aplicación ArgoCD:** `sa-platform-prod`
+- **Namespace de trabajo:** `sa-p8-prod`
 
 Este documento concentra la explicación técnica, arquitectura, operación, incidente, evidencias, capturas requeridas y ejecución del verificador oficial. El README de entrega continúa siendo el punto de entrada obligatorio para los enlaces públicos.
 
@@ -519,4 +519,3 @@ Después de subirlo, reemplazar el valor pendiente en esta documentación y en `
 - [ ] Agregar URL del video de 5 a 8 minutos.
 - [ ] Conservar evidencia de un PR bloqueado por Trivy para cumplimiento literal.
 - [ ] Versionar una copia permanente del SBOM y reporte Trivy recomendado.
-

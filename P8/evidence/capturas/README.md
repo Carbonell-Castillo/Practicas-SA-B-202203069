@@ -21,4 +21,3 @@ Guardar aquí las capturas enumeradas en `P8/DOCUMENTACION.md`:
 ```
 
 No guardar contraseñas, tokens, kubeconfig ni secretos decodificados en las imágenes.
-
