@@ -62,4 +62,4 @@ for chart in P8/gitops-repository/charts/*; do
 done
 ```
 
-Copiar `P8/p8.conf.example` como `p8.conf` junto al script oficial de evaluación y actualizar la versión de `IMAGE` tras la primera release. La publicación, bootstrap y demostración se detallan en [BOOTSTRAP.md](BOOTSTRAP.md); el flujo visual está en [ARQUITECTURA.md](ARQUITECTURA.md) y el informe de una página en [INCIDENTE.md](INCIDENTE.md).
+La guía unificada de arquitectura, operación, capturas, incidente y ejecución del verificador se encuentra en [DOCUMENTACION.md](DOCUMENTACION.md). Los documentos [BOOTSTRAP.md](BOOTSTRAP.md), [ARQUITECTURA.md](ARQUITECTURA.md) e [INCIDENTE.md](INCIDENTE.md) se conservan como versiones breves de referencia.
