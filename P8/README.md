@@ -13,7 +13,7 @@ Entrega del carnet **202203069**. La plataforma evoluciona P5–P7 a un flujo do
 | Ejecución exitosa del pipeline | [Release 1.0.2 · Run 35310455381](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35310455381) |
 | Reversión automática | [Release fallida 1.0.3 · Run 35312427008](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35312427008), [PR GitOps #4](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops/pull/4) y [AnalysisRun fallido](evidence/analysisrun-failed-1.0.3.yaml) |
 | Despliegue rechazado por política | [Salida real de Kyverno](evidence/kyverno-rejection.txt) para `busybox:latest` |
-| Bloqueo por vulnerabilidad crítica | [Run bloqueado 35292544355](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35292544355), antes de corregir `perl-base` y Next.js |
+| Bloqueo por vulnerabilidad crítica | [PR #2 cerrado sin fusionar](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/pull/2), [run bloqueado 35464274539](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35464274539) y [job Trivy del frontend](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35464274539/job/105953640432) |
 | Imagen firmada | `ghcr.io/carbonell-castillo/gateway:1.0.2` y [salida de Cosign](evidence/cosign-verify.txt) |
 | Reporte de prueba de carga | [Resumen JSON](evidence/k6-summary.json) y [salida de consola](evidence/k6-console.txt) |
 | Verificador oficial | [Reporte 60/60](evidence/reporte_p8_202203069.txt) y [resultado CSV](evidence/resultados_p8.csv) |

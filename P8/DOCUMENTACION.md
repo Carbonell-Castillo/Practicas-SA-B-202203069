@@ -36,13 +36,13 @@ Estado verificado:
 | Ejecución exitosa del pipeline | [Release 1.0.4 · Run 35398601069](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35398601069) |
 | Reversión automática | [Release defectuosa 1.0.3 · Run 35312427008](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35312427008), [PR GitOps #4](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops/pull/4), [AnalysisRun fallido](evidence/analysisrun-failed-1.0.3.yaml) y [Rollout abortado](evidence/gateway-aborted-1.0.3.yaml) |
 | Despliegue rechazado por política | [Salida real de Kyverno](evidence/kyverno-rejection.txt) |
-| Bloqueo por vulnerabilidad crítica | [Run bloqueado 35292544355](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35292544355) |
+| Bloqueo por vulnerabilidad crítica | [PR #2 cerrado sin fusionar](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/pull/2), [run bloqueado 35464274539](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35464274539), [job Trivy del frontend](https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069/actions/runs/35464274539/job/105953640432) y [registro técnico](evidence/trivy-pr-blocked.md) |
 | Imagen firmada | `ghcr.io/carbonell-castillo/gateway:1.0.2` y [verificación Cosign](evidence/cosign-verify.txt) |
 | Reporte de prueba de carga | [Resumen JSON](evidence/k6-summary.json) y [salida de consola](evidence/k6-console.txt) |
 | Verificador oficial | [Reporte 60/60](evidence/reporte_p8_202203069.txt) y [CSV](evidence/resultados_p8.csv) |
 | Video demostrativo | [Video en Google Drive](https://drive.google.com/file/d/1FgsHZm2ZFiyrdckXfZQlhW70AdzkExXO/view?usp=sharing) |
 
-> Atención: el enlace de vulnerabilidad demuestra un bloqueo real de Trivy sobre una ejecución de tag. Para cumplir literalmente el texto “Pull Request bloqueado”, debe conservarse además un PR cuya validación de Trivy falle.
+El PR #2 constituye la evidencia literal del bloqueo: Trivy detectó dos vulnerabilidades `CRITICAL` en Next.js `16.3.0`; el PR se cerró sin fusionar y `main` conservó la versión corregida `16.3.3`.
 
 ## 3. Arquitectura
 
@@ -163,7 +163,7 @@ Resultado registrado: 553 solicitudes, 0 % de errores, p95 de 95.37 ms y 100 % d
 
 ### Trivy
 
-Analiza cada imagen con severidad `CRITICAL`, `ignore-unfixed: true` y `exit-code: 1`. Un hallazgo bloqueante impide llegar a firma y PR GitOps.
+En cada Pull Request construye imágenes efímeras sin publicarlas y las analiza con severidad `CRITICAL`, `ignore-unfixed: true` y `exit-code: 1`. En releases vuelve a analizar las imágenes antes de generar SBOM y firmarlas. Un hallazgo bloqueante hace fallar la validación y evita la promoción hacia GitOps.
 
 ### SBOM
 
