@@ -1,0 +1,8 @@
+[2026-10-02T19:24:10.3887909Z] Inicio de bootstrap; cuenta autenticada: carbonellcastillo1204@gmail.com; proyecto aislado: sa-p9-202203069
+[2026-10-02T19:24:18.4790672Z] Habilitando APIs requeridas solo en sa-p9-202203069
+[2026-10-02T19:25:20.7832107Z] Inicializando Terraform contra gs://sa-p9-202203069-tfstate (backend con bloqueo)
+[2026-10-02T19:25:25.0662415Z] Terraform crea GKE, identidades, ArgoCD y la aplicacion raiz
+[2026-10-02T19:25:45.2042969Z] Esperando reconciliacion completa de sa-p9-apps
+[2026-10-02T19:28:27.7256933Z] BOOTSTRAP_OK
+[2026-10-02T19:28:27.7434753Z] RTO medido: 259 segundos
+[2026-10-02T19:28:27.7449994Z] Verificacion: kubectl -n argocd get applications; velero backup-location get

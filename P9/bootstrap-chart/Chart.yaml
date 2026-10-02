@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sa-p9-bootstrap
+description: Unico recurso raiz que conecta Terraform con el app-of-apps de ArgoCD
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

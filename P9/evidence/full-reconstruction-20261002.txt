@@ -1,0 +1,23 @@
+Prueba destructiva completa - 2026-10-02 UTC
+
+Alcance: proyecto aislado sa-p9-202203069. No se operó sobre Bank-usac.
+
+Destrucción observada en GKE:
+- Node pool: inicio 2026-10-02T18:57:28Z; fin 2026-10-02T19:01:45Z.
+- Cluster: inicio 2026-10-02T19:01:54Z; fin 2026-10-02T19:05:41Z.
+- Se verificó que no existía el cluster; el backend GCS versionado, el bucket Velero y Secret Manager permanecieron.
+
+Reconstrucción:
+- Inicio del bootstrap: 2026-10-02T19:07:10Z.
+- CREATE_CLUSTER: 2026-10-02T19:09:20Z a 2026-10-02T19:16:14Z.
+- CREATE_NODE_POOL: 2026-10-02T19:19:14Z a 2026-10-02T19:20:12Z.
+- BOOTSTRAP_OK: 2026-10-02T19:28:27Z.
+- RTO desde activación del procedimiento: 1278 segundos (21 min 18 s).
+- Duración extrema desde inicio de destrucción hasta BOOTSTRAP_OK: 1859 segundos (30 min 59 s).
+
+Recuperación cruzada:
+- Backup anterior a la destrucción: p9-manual-20261002-184018.
+- Restore en el cluster nuevo: restore-p9-manual-20261002-184018.
+- Estado: Completed; 384/384 objetos; PostgreSQL 96306611 bytes; RabbitMQ 58344 bytes.
+- Registro recuperado: before-20261002T184015Z|contenido persistente recuperable.
+- Resultado: PASS.

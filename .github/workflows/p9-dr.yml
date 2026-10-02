@@ -1,0 +1,49 @@
+name: P9 DR validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "P9/**"
+      - ".github/workflows/p9-dr.yml"
+  push:
+    branches: [main]
+    paths:
+      - "P9/**"
+      - ".github/workflows/p9-dr.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.13.3"
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.19.0
+      - name: Terraform
+        working-directory: P9/terraform
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false -input=false
+          terraform validate
+      - name: Bootstrap chart
+        run: |
+          helm lint P9/bootstrap-chart
+          helm template sa-p9-root P9/bootstrap-chart >/dev/null
+      - name: PowerShell syntax
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem P9 -Recurse -Filter *.ps1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors) { $errors | Write-Error; $failed = $true }
+          }
+          if ($failed) { exit 1 }

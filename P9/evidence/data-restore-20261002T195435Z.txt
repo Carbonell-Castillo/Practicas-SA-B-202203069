@@ -1,0 +1,138 @@
+Inicio UTC: 2026-10-02T19:54:35.1271739Z
+Dato previo: before-20261002T195435Z a 2026-10-02T19:54:36.4084191Z
+Backup request "p9-manual-20261002-195437" submitted successfully.
+Waiting for backup to complete. You may safely press ctrl-c to stop waiting - your backup will continue in the background.
+............................
+Backup completed with status: Completed. You may check for more information using the commands `velero backup describe p9-manual-20261002-195437` and `velero backup logs p9-manual-20261002-195437`.
+Name:         [1mp9-manual-20261002-195437[22m
+Namespace:    velero
+Labels:       velero.io/storage-location=default
+Annotations:  velero.io/resource-timeout=10m0s
+              velero.io/source-cluster-k8s-gitversion=v1.35.8-gke.1225000
+              velero.io/source-cluster-k8s-major-version=1
+              velero.io/source-cluster-k8s-minor-version=35
+
+Phase:  [32mCompleted[0m
+
+
+Namespaces:
+  Included:  sa-p9-prod
+  Excluded:  <none>
+
+Resources:
+  Included cluster-scoped:    <none>
+  Excluded cluster-scoped:    volumesnapshotcontents.snapshot.storage.k8s.io
+  Included namespace-scoped:  *
+  Excluded namespace-scoped:  volumesnapshots.snapshot.storage.k8s.io
+
+Label selector:  <none>
+
+Or label selector:  <none>
+
+Storage Location:  default
+
+Velero-Native Snapshot PVs:    auto
+File System Backup (Default):  true
+Snapshot Move Data:            false
+Data Mover:                    velero
+
+TTL:  720h0m0s
+
+CSISnapshotTimeout:    10m0s
+ItemOperationTimeout:  4h0m0s
+
+Hooks:  <none>
+
+Backup Format Version:  1.1.0
+
+Started:    2026-10-02 13:54:35 -0600 CST
+Completed:  2026-10-02 13:55:03 -0600 CST
+
+Expiration:  2026-11-01 13:54:35 -0600 CST
+
+Total items to be backed up:  1863
+Items backed up:              1863
+
+Resource List:  <error getting backup resource list: Get "https://136.80.96.183/apis/velero.io/v1/namespaces/velero/downloadrequests/p9-manual-20261002-195437-44a9b972-a554-4765-997f-64f4a3d88183": context deadline exceeded>
+
+Backup Volumes:
+  <error getting backup volume info: download request download url timeout, check velero server logs for errors. backup storage location may not be available>
+
+HooksAttempted:  0
+HooksFailed:     0
+BACKUP_NAME=p9-manual-20261002-195437
+Desastre simulado UTC: 2026-10-02T19:56:17.4977754Z; filas despues de borrar: 0
+application.argoproj.io/sa-p9-apps patched
+application.argoproj.io/sa-platform-prod patched
+statefulset.apps/postgres scaled
+statefulset.apps/rabbitmq scaled
+statefulset.apps "postgres" deleted from sa-p9-prod namespace
+statefulset.apps "rabbitmq" deleted from sa-p9-prod namespace
+persistentvolumeclaim "data-postgres-0" deleted from sa-p9-prod namespace
+persistentvolumeclaim "data-rabbitmq-0" deleted from sa-p9-prod namespace
+Restore request "restore-p9-manual-20261002-195437" submitted successfully.
+Waiting for restore to complete. You may safely press ctrl-c to stop waiting - your restore will continue in the background.
+..........................................
+Restore completed with status: Completed. You may check for more information using the commands `velero restore describe restore-p9-manual-20261002-195437` and `velero restore logs restore-p9-manual-20261002-195437`.
+application.argoproj.io/sa-platform-prod annotated
+application.argoproj.io/sa-platform-prod patched
+application.argoproj.io/sa-p9-apps patched
+application.argoproj.io/sa-platform-prod annotated
+pod/postgres-0 condition met
+Name:         [1mrestore-p9-manual-20261002-195437[22m
+Namespace:    velero
+Labels:       <none>
+Annotations:  <none>
+
+Phase:                       [32mCompleted[0m
+Total items to be restored:  517
+Items restored:              517
+
+Started:    2026-10-02 13:56:22 -0600 CST
+Completed:  2026-10-02 13:57:05 -0600 CST
+Warnings:   <error getting warnings: client rate limiter Wait returned an error: rate: Wait(n=1) would exceed context deadline>
+
+Errors:  <error getting errors: client rate limiter Wait returned an error: rate: Wait(n=1) would exceed context deadline>
+
+Backup:  p9-manual-20261002-195437
+
+Namespaces:
+  Included:  sa-p9-prod
+  Excluded:  <none>
+
+Resources:
+  Included:        *
+  Excluded:        nodes, events, events.events.k8s.io, backups.velero.io, restores.velero.io, resticrepositories.velero.io, csinodes.storage.k8s.io, volumeattachments.storage.k8s.io, backuprepositories.velero.io
+  Cluster-scoped:  auto
+
+Namespace mappings:  <none>
+
+Label selector:  <none>
+
+Or label selector:  <none>
+
+Restore PVs:  auto
+
+kopia Restores:
+  Completed:
+    sa-p9-prod/postgres-0: data (size: 96148271)
+    sa-p9-prod/rabbitmq-0: data (size: 188872)
+  <error getting restore volume info: client rate limiter Wait returned an error: rate: Wait(n=1) would exceed context deadline>
+
+Existing Resource Policy:   <none>
+ItemOperationTimeout:       4h0m0s
+
+Preserve Service NodePorts:  auto
+
+Uploader config:
+
+
+HooksAttempted:   0
+HooksFailed:      0
+
+Resource List:  <error getting restore resource list: download request download url timeout, check velero server logs for errors. backup storage location may not be available>
+RESTORE_NAME=restore-p9-manual-20261002-195437
+Dato recuperado: before-20261002T195435Z = contenido persistente recuperable
+Dato posterior no recuperado (esperado): count=0
+RPO_REAL_SECONDS=10
+Resultado: PASS

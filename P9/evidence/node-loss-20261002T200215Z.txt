@@ -1,0 +1,39 @@
+Inicio UTC: 2026-10-02T20:02:15.8268632Z
+Nodo: gke-sa-p9-sa-p9-pool-8697c19b-6vls
+node/gke-sa-p9-sa-p9-pool-8697c19b-6vls cordoned
+evicting pod kube-system/konnectivity-agent-dccd9bf85-tsdc2
+evicting pod sa-p9-prod/rabbitmq-0
+evicting pod sa-p9-prod/cron-jobs-summary-29849520-9z55w
+evicting pod sa-p9-prod/notifications-service-6df7f74bcd-7gxrt
+evicting pod sa-p9-prod/cron-jobs-heartbeat-29849518-27vxs
+evicting pod sa-p9-prod/postgres-0
+evicting pod sa-p9-prod/cron-jobs-heartbeat-29849516-czgcp
+evicting pod sa-p9-prod/cron-jobs-heartbeat-29849520-cp2hg
+evicting pod sa-p9-prod/cron-jobs-heartbeat-29849522-lxrrg
+evicting pod sa-p9-prod/authorization-service-5b44b4b4b9-q2f6r
+pod/cron-jobs-heartbeat-29849520-cp2hg evicted
+pod/cron-jobs-heartbeat-29849516-czgcp evicted
+pod/cron-jobs-summary-29849520-9z55w evicted
+pod/cron-jobs-heartbeat-29849518-27vxs evicted
+pod/cron-jobs-heartbeat-29849522-lxrrg evicted
+pod/postgres-0 evicted
+pod/rabbitmq-0 evicted
+pod/konnectivity-agent-dccd9bf85-tsdc2 evicted
+pod/notifications-service-6df7f74bcd-7gxrt evicted
+pod/authorization-service-5b44b4b4b9-q2f6r evicted
+node/gke-sa-p9-sa-p9-pool-8697c19b-6vls drained
+KIND          NAME                    READY    AVAILABLE
+Rollout       auth-service            2        2
+Rollout       authorization-service   2        2
+Rollout       frontend                2        2
+Rollout       gateway                 2        2
+Rollout       notifications-service   1        1
+Rollout       orders-service          2        2
+Rollout       products-service        2        2
+StatefulSet   postgres                <none>   0
+StatefulSet   rabbitmq                <none>   0
+200
+Resultado: PASS
+pod/postgres-0 condition met
+pod/rabbitmq-0 condition met
+Fin UTC: 2026-10-02T20:03:28.3271065Z

@@ -1,0 +1,9 @@
+project_id      = "sa-p9-202203069"
+region          = "us-central1"
+zone            = "us-central1-a"
+cluster_name    = "sa-p9"
+namespace       = "sa-p9-prod"
+node_count      = 2
+machine_type    = "e2-standard-4"
+velero_bucket   = "sa-p9-202203069-velero"
+gitops_repo_url = "https://github.com/Carbonell-Castillo/Practicas-SA-B-202203069-gitops.git"
