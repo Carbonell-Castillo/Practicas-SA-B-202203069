@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ProductsClientService } from '../products-client/products-client.service';
 import { RabbitmqPublisherService } from '../rabbitmq/rabbitmq-publisher.service';
 import { CreateOrderInput } from './dto/create-order.input';
+import { ordersCreated, structuredLog } from '../telemetry';
 
 @Injectable()
 export class OrdersService {
@@ -64,6 +65,8 @@ export class OrdersService {
       include: { items: true },
     });
 
+    ordersCreated.inc({ service: 'orders-service' });
+
     // Flujo asíncrono (Práctica 5, sección D): la orden ya quedó persistida
     // de forma síncrona arriba; publicar el evento es "fire and forget" — no
     // se espera aquí a que notifications-service lo procese, solo a que el
@@ -83,6 +86,7 @@ export class OrdersService {
     });
 
     this.logger.log(`Orden ${order.id} creada, evento order.created encolado`);
+    structuredLog('info', 'order_created', { order_id: order.id, total: Number(order.total) });
 
     return order;
   }

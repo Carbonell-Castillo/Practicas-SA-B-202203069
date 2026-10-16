@@ -1,0 +1,30 @@
+name: P10 observability validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ["P5/apps/gateway/**", "P5/apps/orders-service/**", "P5/apps/products-service/**", "P10/**", ".github/workflows/p10-observability.yml"]
+  push:
+    branches: [main]
+    paths: ["P10/**", ".github/workflows/p10-observability.yml"]
+
+permissions: {contents: read}
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Gateway
+        working-directory: P5/apps/gateway
+        run: npm ci && node --check src/server.js && node --check src/telemetry.js
+      - name: Orders
+        working-directory: P5/apps/orders-service
+        run: npm ci && npm run build
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Products
+        run: python -m compileall P5/apps/products-service/app
+      - name: Bash
+        run: bash -n P10/verificar_p10.sh && bash -n P10/p10.conf

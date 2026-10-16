@@ -1,7 +1,9 @@
+import './telemetry';
 import { LogLevel, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { metricsMiddleware } from './telemetry';
 
 const LOG_LEVELS: Record<string, LogLevel[]> = {
   debug: ['error', 'warn', 'log', 'debug', 'verbose'],
@@ -14,6 +16,7 @@ const LOG_LEVELS: Record<string, LogLevel[]> = {
 async function bootstrap(): Promise<void> {
   const logger = LOG_LEVELS[process.env.LOG_LEVEL ?? 'log'] ?? LOG_LEVELS.log;
   const app = await NestFactory.create(AppModule, { logger });
+  app.use(metricsMiddleware);
 
   app.setGlobalPrefix('api', { exclude: ['graphql'] });
 

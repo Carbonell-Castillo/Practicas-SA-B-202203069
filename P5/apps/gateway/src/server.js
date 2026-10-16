@@ -1,3 +1,5 @@
+require('./telemetry');
+
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -23,6 +25,19 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 const LEVELS = ['error', 'warn', 'info', 'debug'];
 const shouldLog = (level) => LEVELS.indexOf(level) <= LEVELS.indexOf(LOG_LEVEL);
+const { metricsMiddleware, metricsHandler, structuredLog } = require('./telemetry');
+
+app.use(metricsMiddleware);
+app.get('/metrics', metricsHandler);
+
+// Falla controlada P10: latencia, distinta al fallo HTTP utilizado en P8.
+app.use(async (req, _res, next) => {
+  const delay = Number(process.env.P10_DELAY_MS || 0);
+  if (delay > 0 && req.path.startsWith('/api/orders')) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+  next();
+});
 
 // http-proxy-middleware's string pathFilter is a plain `startsWith`, not a
 // path-segment match like Express routing: the filter "/api/auth" would also
