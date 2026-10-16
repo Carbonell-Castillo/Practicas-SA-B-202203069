@@ -21,7 +21,7 @@ jobs:
         run: npm ci && node --check src/server.js && node --check src/telemetry.js
       - name: Orders
         working-directory: P5/apps/orders-service
-        run: npm ci && npm run build
+        run: npm ci && npx prisma generate && npm run build
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
       - name: Products
