@@ -6,4 +6,6 @@ terraform.tfvars
 *.log
 evidence/*.tmp
 evidence/*.json
+reporte_p9_*.txt
+resultados_p9.csv
 !evidence/.gitkeep

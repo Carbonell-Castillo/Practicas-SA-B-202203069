@@ -47,3 +47,7 @@ jobs:
             if ($errors) { $errors | Write-Error; $failed = $true }
           }
           if ($failed) { exit 1 }
+      - name: Bash verifier syntax
+        run: |
+          bash -n P9/verificar_p9.sh
+          bash -n P9/p9.conf
